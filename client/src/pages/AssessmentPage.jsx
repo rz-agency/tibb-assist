@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createAssessment, getFacilities, getPatientProfile, getSymptoms } from '../api/api'
+import { createAssessment, createReferral, getFacilities, getPatientProfile, getSymptoms } from '../api/api'
 import StatusMessage from '../components/StatusMessage'
 
 function AssessmentPage({ user, onNavigate }) {
@@ -12,6 +12,11 @@ function AssessmentPage({ user, onNavigate }) {
   const [facilities, setFacilities] = useState([])
   const [facilityLoading, setFacilityLoading] = useState(false)
   const [facilityError, setFacilityError] = useState('')
+  const [selectedFacilityId, setSelectedFacilityId] = useState('')
+  const [referralNotes, setReferralNotes] = useState('')
+  const [referralSubmitting, setReferralSubmitting] = useState(false)
+  const [referralSuccess, setReferralSuccess] = useState('')
+  const [referralError, setReferralError] = useState('')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -57,11 +62,33 @@ function AssessmentPage({ user, onNavigate }) {
       })
       setCompletedAssessment(result.assessment)
       setFacilityLoading(true)
-      getFacilities().then((facilityResult) => setFacilities(facilityResult.facilities)).catch((requestError) => setFacilityError(requestError.message)).finally(() => setFacilityLoading(false))
+      getFacilities().then((facilityResult) => {
+        setFacilities(facilityResult.facilities)
+        if (facilityResult.facilities.length > 0) setSelectedFacilityId(facilityResult.facilities[0].id)
+      }).catch((requestError) => setFacilityError(requestError.message)).finally(() => setFacilityLoading(false))
     } catch (requestError) {
       setError(requestError.message)
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const submitReferral = async (event) => {
+    event.preventDefault()
+    setReferralError('')
+    setReferralSuccess('')
+    setReferralSubmitting(true)
+    try {
+      await createReferral({
+        assessmentId: completedAssessment.id,
+        facilityId: Number(selectedFacilityId),
+        notes: referralNotes || null,
+      })
+      setReferralSuccess('Referral created successfully.')
+    } catch (requestError) {
+      setReferralError(requestError.message)
+    } finally {
+      setReferralSubmitting(false)
     }
   }
 
@@ -96,7 +123,7 @@ function AssessmentPage({ user, onNavigate }) {
         </div>
         <div className="mt-6 space-y-2 text-slate-700"><p>{resultMessage.explanation}</p><p>{resultMessage.nextAction}</p></div>
         {completedAssessment.pregnancy && <p className="mt-5 text-sm text-slate-600">Linked pregnancy: {completedAssessment.pregnancy.pregnancyStatus}{completedAssessment.pregnancy.gestationalWeek !== null ? ` · ${completedAssessment.pregnancy.gestationalWeek} weeks` : ''}</p>}
-        <div className="mt-8 border-t border-slate-100 pt-6"><h2 className="font-semibold text-slate-900">Healthcare / Referral</h2><p className="mt-2 text-sm text-slate-600">This assessment does not diagnose medical conditions.</p>{facilityLoading && <p className="mt-3 text-sm text-slate-600">Loading healthcare facility information...</p>}{facilityError && <StatusMessage>{facilityError}</StatusMessage>}{!facilityLoading && !facilityError && !facility && <p className="mt-3 text-sm text-slate-600">No healthcare facility information is available yet.</p>}{facility && <div className="mt-3 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-700"><p className="font-semibold text-slate-900">{facility.name}</p><p className="mt-1">{facility.facilityType.replace('_', ' ')}</p>{(facility.address || facility.city) && <p className="mt-1">{[facility.address, facility.city].filter(Boolean).join(', ')}</p>}{facility.phone && <p className="mt-1">Phone: {facility.phone}</p>}</div>}</div>
+        <div className="mt-8 border-t border-slate-100 pt-6"><h2 className="font-semibold text-slate-900">Healthcare / Referral</h2><p className="mt-2 text-sm text-slate-600">This assessment does not diagnose medical conditions.</p>{facilityLoading && <p className="mt-3 text-sm text-slate-600">Loading healthcare facility information...</p>}{facilityError && <StatusMessage>{facilityError}</StatusMessage>}{!facilityLoading && !facilityError && !facility && <p className="mt-3 text-sm text-slate-600">No healthcare facility information is available yet.</p>}{facility && <div className="mt-3 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-700"><p className="font-semibold text-slate-900">{facility.name}</p><p className="mt-1">{facility.facilityType.replace('_', ' ')}</p>{(facility.address || facility.city) && <p className="mt-1">{[facility.address, facility.city].filter(Boolean).join(', ')}</p>}{facility.phone && <p className="mt-1">Phone: {facility.phone}</p>}</div>}{facilities.length > 0 && !referralSuccess && <form className="mt-5 space-y-4" onSubmit={submitReferral}><label className="form-label">Select facility<select className="form-input" value={selectedFacilityId} onChange={(event) => setSelectedFacilityId(event.target.value)}>{facilities.map((f) => <option key={f.id} value={f.id}>{f.name}{f.city ? ` - ${f.city}` : ''}</option>)}</select></label><label className="form-label">Notes <span className="font-normal text-slate-400">(optional)</span><textarea className="form-input" rows="2" value={referralNotes} onChange={(event) => setReferralNotes(event.target.value)} /></label>{referralError && <StatusMessage>{referralError}</StatusMessage>}<button className="button-secondary" disabled={referralSubmitting}>{referralSubmitting ? 'Creating referral...' : 'Create referral'}</button></form>}{referralSuccess && <StatusMessage tone="success">{referralSuccess}</StatusMessage>}</div>
         <div className="mt-8"><h2 className="font-semibold text-slate-900">Recorded answers</h2><ul className="mt-3 space-y-2">{completedAssessment.assessmentSymptoms.map((item) => <li className="rounded-lg bg-slate-50 px-4 py-3" key={item.id}><span className="font-medium">{item.symptom.name}</span><span className="ml-2 text-sm text-slate-500">{item.answerStatus}{item.severity ? ` · ${item.severity}` : ''}</span></li>)}</ul></div>
         <div className="mt-8 flex flex-wrap gap-3"><button className="button-primary" onClick={() => onNavigate('dashboard')}>Back to Dashboard</button><button className="button-secondary" onClick={() => onNavigate('history')}>View Assessment History</button></div>
       </section>

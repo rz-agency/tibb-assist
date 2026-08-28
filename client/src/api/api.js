@@ -59,3 +59,10 @@ export const updatePregnancy = (id, details) => apiRequest(`/pregnancies/${id}`,
   method: 'PUT',
   body: JSON.stringify(details),
 })
+
+export const getReferrals = () => apiRequest('/referrals')
+
+export const createReferral = (details) => apiRequest('/referrals', {
+  method: 'POST',
+  body: JSON.stringify(details),
+})

@@ -1,17 +1,24 @@
 import { useEffect, useState } from 'react'
-import { getPatientProfile } from '../api/api'
+import { getPatientProfile, getReferrals } from '../api/api'
 import StatusMessage from '../components/StatusMessage'
 
 function Dashboard({ user, onNavigate }) {
   const [pregnancy, setPregnancy] = useState(null)
   const [pregnancyLoading, setPregnancyLoading] = useState(true)
   const [pregnancyError, setPregnancyError] = useState('')
+  const [referrals, setReferrals] = useState([])
+  const [referralsLoading, setReferralsLoading] = useState(true)
+  const [referralsError, setReferralsError] = useState('')
 
   useEffect(() => {
     getPatientProfile(user.id)
       .then((profile) => setPregnancy(profile.pregnancies.find((item) => item.pregnancyStatus === 'ACTIVE') || profile.pregnancies[0] || null))
       .catch((requestError) => setPregnancyError(requestError.message))
       .finally(() => setPregnancyLoading(false))
+    getReferrals()
+      .then((result) => setReferrals(result.referrals))
+      .catch((requestError) => setReferralsError(requestError.message))
+      .finally(() => setReferralsLoading(false))
   }, [user.id])
 
   return (
@@ -31,6 +38,13 @@ function Dashboard({ user, onNavigate }) {
         <button className="action-card" onClick={() => onNavigate('history')}><span className="action-icon">≡</span><strong>Assessment history</strong><span>Review previous records</span></button>
         <div className="action-card action-card-muted"><span className="action-icon">○</span><strong>Profile</strong><span>Profile tools are coming next.</span></div>
       </div>
+      <section className="mt-8">
+        <p className="eyebrow">Referrals</p>
+        {referralsLoading && <p className="mt-3 text-slate-600">Loading referrals...</p>}
+        {referralsError && <StatusMessage>{referralsError}</StatusMessage>}
+        {!referralsLoading && !referralsError && referrals.length === 0 && <p className="mt-3 text-slate-600">No referrals created yet.</p>}
+        {!referralsLoading && referrals.length > 0 && <div className="mt-3 space-y-3">{referrals.map((referral) => <div className="history-item" key={referral.id}><span><strong>{referral.facility.name}</strong><small>{referral.facility.facilityType.replace('_', ' ')}{referral.facility.city ? ` · ${referral.facility.city}` : ''}</small><small>Assessment: {new Date(referral.assessment.assessmentDate).toLocaleDateString()} · <span className={`risk-${referral.assessment.riskLevel.toLowerCase()}`}>{referral.assessment.riskLevel}</span></small></span><span className={`status-badge status-${referral.status.toLowerCase()}`}>{referral.status}</span></div>)}</div>}
+      </section>
     </div>
   )
 }

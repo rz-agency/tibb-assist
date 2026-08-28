@@ -35,6 +35,11 @@
 .history-item span:first-child { display: grid; gap: 5px; }
 .history-item small { color: #6b7e79; }
 .detail-label { display: block; margin-bottom: 5px; color: #71827e; font-size: 12px; text-transform: uppercase; }
+.status-badge { display: inline-block; border-radius: 999px; padding: 4px 9px; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 800; }
+.status-recommended { background: #fff0d8; color: #94621c; }
+.status-contacted { background: #dce8f4; color: #2b5a8c; }
+.status-completed { background: #e2f2e8; color: #176b4d; }
+.status-cancelled { background: #f1f1f1; color: #6b6b6b; }
 
 .hero {
   position: relative;

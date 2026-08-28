@@ -8,6 +8,7 @@ const assessmentRoutes = require('./routes/assessmentRoutes')
 const profileRoutes = require('./routes/profileRoutes')
 const facilityRoutes = require('./routes/facilityRoutes')
 const pregnancyRoutes = require('./routes/pregnancyRoutes')
+const referralRoutes = require('./routes/referralRoutes')
 
 const app = express()
 
@@ -29,6 +30,7 @@ app.use('/api', assessmentRoutes)
 app.use('/api', profileRoutes)
 app.use('/api', facilityRoutes)
 app.use('/api', pregnancyRoutes)
+app.use('/api', referralRoutes)
 
 app.get('/api/health', (req, res) => {
   res.json({

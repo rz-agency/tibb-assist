@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getAssessment, getAssessments, getLhwProfile } from '../api/api'
+import { getAssessment, getAssessments, getLhwProfile, getReferrals } from '../api/api'
 import StatusMessage from '../components/StatusMessage'
 
 function formatDate(value) {
@@ -11,6 +11,9 @@ function LhwDashboard({ user }) {
   const [assessments, setAssessments] = useState([])
   const [selectedPatient, setSelectedPatient] = useState(null)
   const [selectedAssessment, setSelectedAssessment] = useState(null)
+  const [referrals, setReferrals] = useState([])
+  const [referralsLoading, setReferralsLoading] = useState(false)
+  const [referralsError, setReferralsError] = useState('')
   const [loading, setLoading] = useState(true)
   const [detailLoading, setDetailLoading] = useState(false)
   const [error, setError] = useState('')
@@ -46,6 +49,21 @@ function LhwDashboard({ user }) {
     }
   }
 
+  const openPatient = async (patient) => {
+    setSelectedPatient(patient)
+    setError('')
+    setReferralsLoading(true)
+    setReferralsError('')
+    try {
+      const result = await getReferrals()
+      setReferrals(result.referrals.filter((r) => r.patientId === patient.id))
+    } catch (requestError) {
+      setReferralsError(requestError.message)
+    } finally {
+      setReferralsLoading(false)
+    }
+  }
+
   if (loading) return <p className="text-slate-600">Loading assigned women...</p>
   if (error && !profile) return <StatusMessage>{error}</StatusMessage>
 
@@ -77,8 +95,8 @@ function LhwDashboard({ user }) {
     {error && <StatusMessage>{error}</StatusMessage>}
     {profile.assignedPatients.length === 0 && <section className="content-panel"><p className="text-slate-600">No women are assigned to you yet.</p></section>}
     {profile.assignedPatients.length > 0 && <div className="grid gap-6 lg:grid-cols-[minmax(0,280px)_1fr]">
-      <section><h2 className="mb-3 font-semibold text-slate-900">Assigned women</h2><div className="space-y-3">{profile.assignedPatients.map((patient) => <button className="history-item" key={patient.id} onClick={() => { setSelectedPatient(patient); setError('') }}><span><strong>{patient.fullName}</strong><small>{patient.district || patient.villageOrArea || 'Location not recorded'}</small></span></button>)}</div></section>
-      <section>{!selectedPatient && <div className="content-panel"><p className="text-slate-600">Select a woman to view her assessments.</p></div>}{selectedPatient && <div><div className="mb-4"><p className="eyebrow">Selected woman</p><h2 className="section-title">{selectedPatient.fullName}</h2></div>{selectedAssessments.length === 0 && <section className="content-panel"><p className="text-slate-600">No assessments have been saved for this woman.</p></section>}{selectedAssessments.length > 0 && <div className="space-y-3">{selectedAssessments.map((assessment) => <button className="history-item" key={assessment.id} onClick={() => openAssessment(assessment.id)}><span><strong>{formatDate(assessment.assessmentDate)}</strong><small>{assessment.assessmentSymptoms.length} symptom records · {assessment.inputMethod}</small></span><span className={`risk-${assessment.riskLevel.toLowerCase()}`}>{assessment.riskLevel}</span></button>)}</div>}</div>}</section>
+      <section><h2 className="mb-3 font-semibold text-slate-900">Assigned women</h2><div className="space-y-3">{profile.assignedPatients.map((patient) => <button className="history-item" key={patient.id} onClick={() => { openPatient(patient); setError('') }}><span><strong>{patient.fullName}</strong><small>{patient.district || patient.villageOrArea || 'Location not recorded'}</small></span></button>)}</div></section>
+      <section>{!selectedPatient && <div className="content-panel"><p className="text-slate-600">Select a woman to view her assessments.</p></div>}{selectedPatient && <div><div className="mb-4"><p className="eyebrow">Selected woman</p><h2 className="section-title">{selectedPatient.fullName}</h2></div>{referralsLoading && <p className="mb-3 text-sm text-slate-600">Loading referrals...</p>}{referralsError && <StatusMessage>{referralsError}</StatusMessage>}{!referralsLoading && referrals.length > 0 && <div className="mb-4"><p className="eyebrow">Referrals</p><div className="mt-2 space-y-2">{referrals.map((referral) => <div className="history-item" key={referral.id}><span><strong>{referral.facility.name}</strong><small>{referral.status} · {new Date(referral.referralDate).toLocaleDateString()}</small></span><span className={`risk-${referral.assessment.riskLevel.toLowerCase()}`}>{referral.assessment.riskLevel}</span></div>)}</div></div>}{selectedAssessments.length === 0 && <section className="content-panel"><p className="text-slate-600">No assessments have been saved for this woman.</p></section>}{selectedAssessments.length > 0 && <div className="space-y-3">{selectedAssessments.map((assessment) => <button className="history-item" key={assessment.id} onClick={() => openAssessment(assessment.id)}><span><strong>{formatDate(assessment.assessmentDate)}</strong><small>{assessment.assessmentSymptoms.length} symptom records · {assessment.inputMethod}</small></span><span className={`risk-${assessment.riskLevel.toLowerCase()}`}>{assessment.riskLevel}</span></button>)}</div>}</div>}</section>
     </div>}
   </div>
 }
