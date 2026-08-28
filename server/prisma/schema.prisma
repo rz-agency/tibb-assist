@@ -1,0 +1,239 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  WOMAN
+  LHW
+  ADMIN
+}
+
+enum PregnancyStatus {
+  ACTIVE
+  COMPLETED
+  UNKNOWN
+}
+
+enum AssessmentInputMethod {
+  VISUAL
+  VOICE
+  OTHER
+}
+
+enum RiskLevel {
+  GREEN
+  YELLOW
+  RED
+}
+
+enum AnswerStatus {
+  PRESENT
+  ABSENT
+  UNKNOWN
+}
+
+enum SeverityLevel {
+  MILD
+  MODERATE
+  SEVERE
+}
+
+enum LhwRegion {
+  PUNJAB
+  SINDH
+  KPK
+  BALOCHISTAN
+  GILGIT_BALTISTAN
+  ISLAMABAD
+  OTHER
+}
+
+enum FacilityType {
+  HOSPITAL
+  CLINIC
+  HEALTH_CENTER
+  OTHER
+}
+
+enum ReferralStatus {
+  RECOMMENDED
+  CONTACTED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  email      String   @unique @db.VarChar(255)
+  passwordHash String  @map("password_hash") @db.VarChar(255)
+  role       UserRole
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  patientProfile PatientProfile?
+  lhwProfile     Lhw?
+  assessedRecords Assessment[] @relation("AssessedByUser")
+
+  @@map("users")
+}
+
+model PatientProfile {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @unique @map("user_id")
+  fullName        String   @map("full_name") @db.VarChar(255)
+  phone           String?  @db.VarChar(30)
+  age             Int?
+  villageOrArea   String?  @map("village_or_area") @db.VarChar(255)
+  district        String?  @db.VarChar(255)
+  province        String?  @db.VarChar(255)
+  assignedLhwId   Int?     @map("assigned_lhw_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user            User     @relation(fields: [userId], references: [id])
+  assignedLhw     Lhw?     @relation("AssignedLhw", fields: [assignedLhwId], references: [id])
+  pregnancies     Pregnancy[]
+  assessments     Assessment[]
+  referrals       Referral[]
+  emergencyContact EmergencyContact?
+
+  @@map("patient_profiles")
+}
+
+model Pregnancy {
+  id               Int      @id @default(autoincrement())
+  patientId        Int      @map("patient_id")
+  pregnancyStatus PregnancyStatus @default(ACTIVE) @map("pregnancy_status")
+  lmpDate          DateTime? @map("lmp_date") @db.Date
+  dueDate          DateTime? @map("due_date") @db.Date
+  gestationalWeek  Int?     @map("gestational_week")
+  notes            String?  @db.Text
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  patient          PatientProfile @relation(fields: [patientId], references: [id])
+  assessments     Assessment[]
+
+  @@map("pregnancies")
+}
+
+model Symptom {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique @db.VarChar(100)
+  name      String   @db.VarChar(255)
+  category  String?  @db.VarChar(100)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  assessmentSymptoms AssessmentSymptom[]
+
+  @@map("symptoms")
+}
+
+model Assessment {
+  id               Int      @id @default(autoincrement())
+  patientId        Int      @map("patient_id")
+  pregnancyId      Int?     @map("pregnancy_id")
+  assessedByUserId Int      @map("assessed_by_user_id")
+  assessmentDate   DateTime @map("assessment_date")
+  inputMethod      AssessmentInputMethod @map("input_method")
+  riskLevel        RiskLevel @map("risk_level")
+  triageNotes      String?  @map("triage_notes") @db.Text
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  patient          PatientProfile @relation(fields: [patientId], references: [id])
+  pregnancy        Pregnancy?      @relation(fields: [pregnancyId], references: [id])
+  assessedByUser   User            @relation("AssessedByUser", fields: [assessedByUserId], references: [id])
+  assessmentSymptoms AssessmentSymptom[]
+  referrals       Referral[]
+
+  @@map("assessments")
+}
+
+model AssessmentSymptom {
+  id           Int      @id @default(autoincrement())
+  assessmentId Int      @map("assessment_id")
+  symptomId    Int      @map("symptom_id")
+  answerStatus AnswerStatus @map("answer_status")
+  severity     SeverityLevel?
+  notes        String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  symptom      Symptom    @relation(fields: [symptomId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, symptomId], name: "assessment_symptom_unique")
+  @@map("assessment_symptoms")
+}
+
+model Lhw {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique @map("user_id")
+  fullName  String   @map("full_name") @db.VarChar(255)
+  phone     String?  @db.VarChar(30)
+  region    LhwRegion? @default(OTHER)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User @relation(fields: [userId], references: [id])
+  assignedPatients PatientProfile[] @relation("AssignedLhw")
+
+  @@map("lhws")
+}
+
+model HealthcareFacility {
+  id           Int      @id @default(autoincrement())
+  name         String   @db.VarChar(255)
+  facilityType FacilityType @map("facility_type")
+  address      String?  @db.VarChar(255)
+  city         String?  @db.VarChar(255)
+  latitude     Decimal? @db.Decimal(9, 6)
+  longitude    Decimal? @db.Decimal(9, 6)
+  phone        String?  @db.VarChar(30)
+  isVerified   Boolean  @default(false) @map("is_verified")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  referrals    Referral[]
+
+  @@map("healthcare_facilities")
+}
+
+model Referral {
+  id            Int      @id @default(autoincrement())
+  patientId     Int      @map("patient_id")
+  assessmentId  Int      @map("assessment_id")
+  facilityId    Int      @map("facility_id")
+  status        ReferralStatus
+  referralDate  DateTime @map("referral_date")
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  patient       PatientProfile @relation(fields: [patientId], references: [id])
+  assessment    Assessment @relation(fields: [assessmentId], references: [id])
+  facility      HealthcareFacility @relation(fields: [facilityId], references: [id])
+
+  @@map("referrals")
+}
+
+model EmergencyContact {
+  id          Int      @id @default(autoincrement())
+  patientId   Int      @unique @map("patient_id")
+  fullName    String   @map("full_name") @db.VarChar(255)
+  relationship String? @db.VarChar(100)
+  phone       String   @db.VarChar(30)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  patient     PatientProfile @relation(fields: [patientId], references: [id])
+
+  @@map("emergency_contacts")
+}

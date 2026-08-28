@@ -1,0 +1,203 @@
+.auth-shell { display: grid; min-height: 100vh; place-items: center; padding: 24px; background: #e7f0ed; }
+.auth-panel, .content-panel { width: 100%; border: 1px solid #d9e0dc; border-radius: 16px; background: #fff; padding: 28px; box-shadow: 0 16px 40px rgba(32, 55, 49, .08); }
+.auth-panel { max-width: 440px; }
+.content-panel { max-width: 760px; }
+.eyebrow { margin: 0 0 8px; color: #147d70; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+.page-title { margin: 0; color: #102a2a; font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.05; font-weight: 700; }
+.section-title { margin: 0; color: #102a2a; font-size: 1.75rem; font-weight: 700; }
+.form-label { display: grid; gap: 8px; color: #334e4a; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 600; }
+.form-input { width: 100%; border: 1px solid #cbd8d3; border-radius: 8px; background: #fbfdfc; padding: 11px 12px; color: #17322f; font: inherit; font-weight: 400; outline: none; }
+.form-input:focus { border-color: #147d70; box-shadow: 0 0 0 3px rgba(20, 125, 112, .12); }
+.button-primary, .button-secondary, .nav-item, .action-card, .history-item { cursor: pointer; font-family: ui-sans-serif, system-ui, sans-serif; }
+.button-primary { border: 0; border-radius: 8px; background: #147d70; padding: 12px 18px; color: #fff; font-weight: 700; }
+.button-primary:hover { background: #0e665c; }
+.button-primary:disabled { cursor: wait; opacity: .65; }
+.button-secondary { border: 1px solid #cbd8d3; border-radius: 8px; background: #fff; padding: 8px 12px; color: #24534d; font-size: 14px; font-weight: 700; }
+.link-button { border: 0; background: none; padding: 0; color: #147d70; cursor: pointer; font: inherit; font-weight: 700; }
+.status-message { border-radius: 8px; background: #fff0ef; padding: 10px 12px; color: #a33b34; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; }
+.status-success { background: #e6f4ed; color: #176b4d; }
+.nav-item { border: 0; border-radius: 8px; background: transparent; padding: 10px 12px; text-align: left; color: #58706b; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.nav-item:hover, .nav-item-active { background: #dcebe6; color: #126b60; }
+.profile-strip { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-left: 4px solid #e2a65d; background: #fff; padding: 16px 18px; }
+.role-badge, .risk-green, .risk-yellow, .risk-red { display: inline-block; border-radius: 999px; padding: 4px 9px; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 800; }
+.role-badge { background: #e4efec; color: #176b60; }
+.risk-green { background: #e2f2e8; color: #176b4d; }
+.risk-yellow { background: #fff0d8; color: #94621c; }
+.risk-red { background: #ffe2df; color: #a33b34; }
+.action-card { display: grid; gap: 8px; border: 1px solid #d9e0dc; border-radius: 12px; background: #fff; padding: 20px; text-align: left; color: #5c716c; }
+.action-card:hover { border-color: #8bb9ae; transform: translateY(-2px); }
+.action-card strong { color: #17322f; font-size: 16px; }
+.action-icon { color: #147d70; font-size: 24px; font-weight: 700; }
+.action-card-muted { cursor: default; background: #f1f4f1; }
+.action-card-muted:hover { border-color: #d9e0dc; transform: none; }
+.history-item { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid #d9e0dc; border-radius: 10px; background: #fff; padding: 16px; text-align: left; }
+.history-item:hover { border-color: #8bb9ae; }
+.history-item span:first-child { display: grid; gap: 5px; }
+.history-item small { color: #6b7e79; }
+.detail-label { display: block; margin-bottom: 5px; color: #71827e; font-size: 12px; text-transform: uppercase; }
+
+.hero {
+  position: relative;
+
+  .base,
+  .framework,
+  .vite {
+    inset-inline: 0;
+    margin: 0 auto;
+  }
+
+  .base {
+    width: 170px;
+    position: relative;
+    z-index: 0;
+  }
+
+  .framework,
+  .vite {
+    position: absolute;
+  }
+
+  .framework {
+    z-index: 1;
+    top: 34px;
+    height: 28px;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
+      scale(1.4);
+  }
+
+  .vite {
+    z-index: 0;
+    top: 107px;
+    height: 26px;
+    width: auto;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
+      scale(0.8);
+  }
+}
+
+#center {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  place-content: center;
+  place-items: center;
+  flex-grow: 1;
+
+  @media (max-width: 1024px) {
+    padding: 32px 20px 24px;
+    gap: 18px;
+  }
+}
+
+#next-steps {
+  display: flex;
+  border-top: 1px solid var(--border);
+  text-align: left;
+
+  & > div {
+    flex: 1 1 0;
+    padding: 32px;
+    @media (max-width: 1024px) {
+      padding: 24px 20px;
+    }
+  }
+
+  .icon {
+    margin-bottom: 16px;
+    width: 22px;
+    height: 22px;
+  }
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+#docs {
+  border-right: 1px solid var(--border);
+
+  @media (max-width: 1024px) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+#next-steps ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  margin: 32px 0 0;
+
+  .logo {
+    height: 18px;
+  }
+
+  a {
+    color: var(--text-h);
+    font-size: 16px;
+    border-radius: 6px;
+    background: var(--social-bg);
+    display: flex;
+    padding: 6px 12px;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: box-shadow 0.3s;
+
+    &:hover {
+      box-shadow: var(--shadow);
+    }
+    .button-icon {
+      height: 18px;
+      width: 18px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    li {
+      flex: 1 1 calc(50% - 8px);
+    }
+
+    a {
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+  }
+}
+
+#spacer {
+  height: 88px;
+  border-top: 1px solid var(--border);
+  @media (max-width: 1024px) {
+    height: 48px;
+  }
+}
+
+.ticks {
+  position: relative;
+  width: 100%;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: -4.5px;
+    border: 5px solid transparent;
+  }
+
+  &::before {
+    left: 0;
+    border-left-color: var(--border);
+  }
+  &::after {
+    right: 0;
+    border-right-color: var(--border);
+  }
+}
