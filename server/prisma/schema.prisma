@@ -101,7 +101,7 @@ model PatientProfile {
   pregnancies     Pregnancy[]
   assessments     Assessment[]
   referrals       Referral[]
-  emergencyContact EmergencyContact?
+  emergencyContacts EmergencyContact[]
 
   @@map("patient_profiles")
 }
@@ -225,15 +225,16 @@ model Referral {
 }
 
 model EmergencyContact {
-  id          Int      @id @default(autoincrement())
-  patientId   Int      @unique @map("patient_id")
-  fullName    String   @map("full_name") @db.VarChar(255)
-  relationship String? @db.VarChar(100)
-  phone       String   @db.VarChar(30)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           Int      @id @default(autoincrement())
+  patientId    Int      @map("patient_id")
+  name         String   @db.VarChar(255)
+  relationship String   @db.VarChar(100)
+  phoneNumber  String   @map("phone_number") @db.VarChar(30)
+  isPrimary    Boolean  @default(false) @map("is_primary")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
-  patient     PatientProfile @relation(fields: [patientId], references: [id])
+  patient      PatientProfile @relation(fields: [patientId], references: [id])
 
   @@map("emergency_contacts")
 }

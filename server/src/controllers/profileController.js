@@ -21,7 +21,7 @@ const patientProfileSelect = {
       region: true,
     },
   },
-  emergencyContact: true,
+  emergencyContacts: true,
 }
 
 const lhwProfileSelect = {

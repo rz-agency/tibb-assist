@@ -9,10 +9,12 @@ const profileRoutes = require('./routes/profileRoutes')
 const facilityRoutes = require('./routes/facilityRoutes')
 const pregnancyRoutes = require('./routes/pregnancyRoutes')
 const referralRoutes = require('./routes/referralRoutes')
+const emergencyContactRoutes = require('./routes/emergencyContactRoutes')
+const aiAssistantRoutes = require('./routes/aiAssistantRoutes')
 
 const app = express()
 
-app.use(express.json())
+app.use(express.json({ limit: '5mb' }))
 app.use(session({
   name: 'tibbAssist.sid',
   secret: process.env.SESSION_SECRET,
@@ -31,6 +33,8 @@ app.use('/api', profileRoutes)
 app.use('/api', facilityRoutes)
 app.use('/api', pregnancyRoutes)
 app.use('/api', referralRoutes)
+app.use('/api', emergencyContactRoutes)
+app.use('/api', aiAssistantRoutes)
 
 app.get('/api/health', (req, res) => {
   res.json({

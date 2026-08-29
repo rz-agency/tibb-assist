@@ -108,14 +108,13 @@ async function main() {
     },
   })
 
-  const emergencyContact = await prisma.emergencyContact.upsert({
-    where: { patientId: patient.id },
-    update: {},
-    create: {
+  const emergencyContact = await prisma.emergencyContact.create({
+    data: {
       patientId: patient.id,
-      fullName: 'Demo Husband Ali',
+      name: 'Demo Husband Ali',
       relationship: 'Husband',
-      phone: '+923001234567',
+      phoneNumber: '+923001234567',
+      isPrimary: true,
     },
   })
 

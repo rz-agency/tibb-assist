@@ -44,7 +44,17 @@ export const getAssessment = (id) => apiRequest(`/assessments/${id}`)
 
 export const getPatientProfile = (userId) => apiRequest(`/patients/${userId}/profile`)
 
+export const updatePatientProfile = (userId, details) => apiRequest(`/patients/${userId}/profile`, {
+  method: 'PUT',
+  body: JSON.stringify(details),
+})
+
 export const getLhwProfile = (userId) => apiRequest(`/lhws/${userId}/profile`)
+
+export const updateLhwProfile = (userId, details) => apiRequest(`/lhws/${userId}/profile`, {
+  method: 'PUT',
+  body: JSON.stringify(details),
+})
 
 export const getFacilities = () => apiRequest('/facilities')
 
@@ -65,4 +75,45 @@ export const getReferrals = () => apiRequest('/referrals')
 export const createReferral = (details) => apiRequest('/referrals', {
   method: 'POST',
   body: JSON.stringify(details),
+})
+
+export const getEmergencyContacts = (patientId) => apiRequest(`/patients/${patientId}/emergency-contacts`)
+
+export const createEmergencyContact = (patientId, details) => apiRequest(`/patients/${patientId}/emergency-contacts`, {
+  method: 'POST',
+  body: JSON.stringify(details),
+})
+
+export const updateEmergencyContact = (id, details) => apiRequest(`/emergency-contacts/${id}`, {
+  method: 'PUT',
+  body: JSON.stringify(details),
+})
+
+export const deleteEmergencyContact = (id) => apiRequest(`/emergency-contacts/${id}`, {
+  method: 'DELETE',
+})
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
+}
+
+export const sendAiMessage = async (message, conversationHistory = [], audioBlob = null) => {
+  const body = { message, conversationHistory }
+  if (audioBlob) {
+    body.audio = await blobToBase64(audioBlob)
+  }
+  return apiRequest('/ai-assistant/message', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export const confirmAiAssessment = (extractedSymptoms) => apiRequest('/ai-assistant/confirm', {
+  method: 'POST',
+  body: JSON.stringify({ extractedSymptoms }),
 })

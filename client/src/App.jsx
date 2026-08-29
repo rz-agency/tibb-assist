@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { getCurrentUser, logoutUser } from './api/api'
 import AppLayout from './components/AppLayout'
 import Login from './pages/Login'
@@ -8,9 +9,11 @@ import LhwDashboard from './pages/LhwDashboard'
 import AssessmentPage from './pages/AssessmentPage'
 import AssessmentHistory from './pages/AssessmentHistory'
 import PregnancyPage from './pages/PregnancyPage'
+import AiAssistantPage from './pages/AiAssistantPage'
 import './App.css'
 
 function App() {
+  const { t } = useTranslation()
   const [user, setUser] = useState(null)
   const [page, setPage] = useState('dashboard')
   const [checkingSession, setCheckingSession] = useState(true)
@@ -29,7 +32,7 @@ function App() {
     }
   }
 
-  if (checkingSession) return <main className="auth-shell"><p className="text-slate-600">Checking your session...</p></main>
+  if (checkingSession) return <main className="auth-shell"><p className="text-slate-600">{t('layout.checkingSession')}</p></main>
   if (!user) return showRegister ? <Register onLogin={setUser} onShowLogin={() => setShowRegister(false)} /> : <Login onLogin={setUser} onShowRegister={() => setShowRegister(true)} />
 
   const content = user.role === 'LHW'
@@ -40,6 +43,8 @@ function App() {
       ? <AssessmentHistory onNavigate={setPage} />
       : page === 'pregnancy'
         ? <PregnancyPage />
+        : page === 'ai-assistant'
+          ? <AiAssistantPage user={user} onNavigate={setPage} />
       : <Dashboard user={user} onNavigate={setPage} />
 
   return <AppLayout user={user} currentPage={page} onNavigate={setPage} onLogout={logout}>{content}</AppLayout>

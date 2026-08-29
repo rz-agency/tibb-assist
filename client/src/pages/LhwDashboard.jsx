@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react'
-import { getAssessment, getAssessments, getLhwProfile, getReferrals } from '../api/api'
+import { useTranslation } from 'react-i18next'
+import { getAssessment, getAssessments, getLhwProfile, getReferrals, updateLhwProfile } from '../api/api'
 import StatusMessage from '../components/StatusMessage'
+
+const RISK_LABEL_KEY = { GREEN: 'assessment.riskGreen', YELLOW: 'assessment.riskYellow', RED: 'assessment.riskRed' }
 
 function formatDate(value) {
   return new Date(value).toLocaleString()
 }
 
 function LhwDashboard({ user }) {
+  const { t } = useTranslation()
   const [profile, setProfile] = useState(null)
   const [assessments, setAssessments] = useState([])
   const [selectedPatient, setSelectedPatient] = useState(null)
@@ -17,6 +21,11 @@ function LhwDashboard({ user }) {
   const [loading, setLoading] = useState(true)
   const [detailLoading, setDetailLoading] = useState(false)
   const [error, setError] = useState('')
+  const [profileEditing, setProfileEditing] = useState(false)
+  const [profileForm, setProfileForm] = useState({ fullName: '', phone: '', region: '' })
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileSuccess, setProfileSuccess] = useState('')
+  const [profileError, setProfileError] = useState('')
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -36,6 +45,42 @@ function LhwDashboard({ user }) {
 
     loadDashboard()
   }, [user.id])
+
+  const updateProfileField = (event) => {
+    const { name, value } = event.target
+    setProfileForm({ ...profileForm, [name]: value })
+  }
+
+  const startProfileEdit = () => {
+    if (profile) {
+      setProfileForm({ fullName: profile.fullName || '', phone: profile.phone || '', region: profile.region || 'OTHER' })
+    }
+    setProfileEditing(true)
+    setProfileSuccess('')
+    setProfileError('')
+  }
+
+  const cancelProfileEdit = () => {
+    setProfileEditing(false)
+    setProfileError('')
+  }
+
+  const saveProfile = async (event) => {
+    event.preventDefault()
+    setProfileSaving(true)
+    setProfileSuccess('')
+    setProfileError('')
+    try {
+      const updated = await updateLhwProfile(user.id, profileForm)
+      setProfile((prev) => ({ ...prev, ...updated }))
+      setProfileSuccess(t('common.profileUpdated'))
+      setProfileEditing(false)
+    } catch (requestError) {
+      setProfileError(requestError.message)
+    } finally {
+      setProfileSaving(false)
+    }
+  }
 
   const openAssessment = async (id) => {
     try {
@@ -64,24 +109,24 @@ function LhwDashboard({ user }) {
     }
   }
 
-  if (loading) return <p className="text-slate-600">Loading assigned women...</p>
+  if (loading) return <p className="text-slate-600">{t('lhw.pageTitle')}...</p>
   if (error && !profile) return <StatusMessage>{error}</StatusMessage>
 
   if (selectedAssessment) {
     return <div>
-      <button className="link-button mb-5" onClick={() => setSelectedAssessment(null)}>← Back to assigned women</button>
+      <button className="link-button mb-5" onClick={() => setSelectedAssessment(null)}>← {t('lhw.pageTitle')}</button>
       {error && <StatusMessage>{error}</StatusMessage>}
-      {detailLoading && <p className="text-slate-600">Loading assessment details...</p>}
+      {detailLoading && <p className="text-slate-600">{t('history.loadingDetails')}</p>}
       <section className="content-panel">
-        <p className="eyebrow">Assessment detail</p>
+        <p className="eyebrow">{t('history.detailEyebrow')}</p>
         <h1 className="section-title">{formatDate(selectedAssessment.assessmentDate)}</h1>
         <div className="mt-5 grid gap-3 text-sm sm:grid-cols-3">
-          <div><span className="detail-label">Risk level</span><span className={`risk-${selectedAssessment.riskLevel.toLowerCase()}`}>{selectedAssessment.riskLevel}</span></div>
-          <div><span className="detail-label">Input method</span><span>{selectedAssessment.inputMethod}</span></div>
-          <div><span className="detail-label">Woman</span><span>{selectedAssessment.patient.fullName}</span></div>
+          <div><span className="detail-label">{t('assessment.riskLevel')}</span><span className={`risk-${selectedAssessment.riskLevel.toLowerCase()}`}>{t(RISK_LABEL_KEY[selectedAssessment.riskLevel])}</span></div>
+          <div><span className="detail-label">{t('history.inputMethod')}</span><span>{selectedAssessment.inputMethod}</span></div>
+          <div><span className="detail-label">{t('history.patient')}</span><span>{selectedAssessment.patient.fullName}</span></div>
         </div>
-        {selectedAssessment.pregnancy && <p className="mt-5 text-sm text-slate-600">Pregnancy: {selectedAssessment.pregnancy.pregnancyStatus}{selectedAssessment.pregnancy.gestationalWeek !== null ? ` · ${selectedAssessment.pregnancy.gestationalWeek} weeks` : ''}</p>}
-        <div className="mt-6"><h2 className="font-semibold text-slate-900">Recorded symptoms</h2><ul className="mt-3 space-y-2">{selectedAssessment.assessmentSymptoms.map((item) => <li className="rounded-lg bg-slate-50 px-4 py-3" key={item.id}><span className="font-medium">{item.symptom.name}</span><span className="ml-2 text-sm text-slate-500">{item.answerStatus}{item.severity ? ` · ${item.severity}` : ''}</span>{item.notes && <p className="mt-2 text-sm text-slate-600">Notes: {item.notes}</p>}</li>)}</ul></div>
+        {selectedAssessment.pregnancy && <p className="mt-5 text-sm text-slate-600">{t('history.pregnancyPrefix')} {selectedAssessment.pregnancy.pregnancyStatus}{selectedAssessment.pregnancy.gestationalWeek !== null ? ` · ${selectedAssessment.pregnancy.gestationalWeek} ${t('assessment.weeks')}` : ''}</p>}
+        <div className="mt-6"><h2 className="font-semibold text-slate-900">{t('history.recordedSymptoms')}</h2><ul className="mt-3 space-y-2">{selectedAssessment.assessmentSymptoms.map((item) => <li className="rounded-lg bg-slate-50 px-4 py-3" key={item.id}><span className="font-medium">{item.symptom.name}</span><span className="ml-2 text-sm text-slate-500">{item.answerStatus}{item.severity ? ` · ${item.severity}` : ''}</span>{item.notes && <p className="mt-2 text-sm text-slate-600">{t('history.notesPrefix')} {item.notes}</p>}</li>)}</ul></div>
       </section>
     </div>
   }
@@ -91,12 +136,31 @@ function LhwDashboard({ user }) {
     : []
 
   return <div>
-    <div className="mb-8"><p className="eyebrow">LHW workspace</p><h1 className="page-title">Assigned women</h1><p className="mt-3 text-slate-600">{profile.fullName} · {user.email}</p></div>
+    <div className="mb-8"><p className="eyebrow">{t('lhw.workspaceEyebrow')}</p><h1 className="page-title">{t('lhw.pageTitle')}</h1><p className="mt-3 text-slate-600">{profile.fullName} · {user.email}</p></div>
     {error && <StatusMessage>{error}</StatusMessage>}
-    {profile.assignedPatients.length === 0 && <section className="content-panel"><p className="text-slate-600">No women are assigned to you yet.</p></section>}
+    {profileSuccess && <StatusMessage tone="success">{profileSuccess}</StatusMessage>}
+    {profileEditing && (
+      <section className="content-panel mb-6">
+        <h2 className="section-title">{t('common.editProfile')}</h2>
+        <form className="mt-5 space-y-4" onSubmit={saveProfile}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="form-label">{t('dashboard.formFullName')}<input className="form-input" name="fullName" value={profileForm.fullName} onChange={updateProfileField} required /></label>
+            <label className="form-label">{t('dashboard.formPhone')}<input className="form-input" name="phone" value={profileForm.phone} onChange={updateProfileField} /></label>
+            <label className="form-label">{t('dashboard.provinceLabel')}<select className="form-input" name="region" value={profileForm.region} onChange={updateProfileField}><option value="KPK">KPK</option><option value="PUNJAB">Punjab</option><option value="SINDH">Sindh</option><option value="BALOCHISTAN">Balochistan</option><option value="GB">GB</option><option value="AJK">AJK</option><option value="ICT">ICT</option><option value="OTHER">Other</option></select></label>
+          </div>
+          {profileError && <StatusMessage>{profileError}</StatusMessage>}
+          <div className="flex flex-wrap gap-3">
+            <button className="button-primary" disabled={profileSaving}>{profileSaving ? t('common.saving') : t('common.saveProfile')}</button>
+            <button className="button-secondary" type="button" onClick={cancelProfileEdit}>{t('common.cancel')}</button>
+          </div>
+        </form>
+      </section>
+    )}
+    {!profileEditing && <div className="mb-6"><button className="button-secondary" onClick={startProfileEdit}>{t('common.editProfile')}</button></div>}
+    {profile.assignedPatients.length === 0 && <section className="content-panel"><p className="text-slate-600">{t('lhw.noWomenAssigned')}</p></section>}
     {profile.assignedPatients.length > 0 && <div className="grid gap-6 lg:grid-cols-[minmax(0,280px)_1fr]">
-      <section><h2 className="mb-3 font-semibold text-slate-900">Assigned women</h2><div className="space-y-3">{profile.assignedPatients.map((patient) => <button className="history-item" key={patient.id} onClick={() => { openPatient(patient); setError('') }}><span><strong>{patient.fullName}</strong><small>{patient.district || patient.villageOrArea || 'Location not recorded'}</small></span></button>)}</div></section>
-      <section>{!selectedPatient && <div className="content-panel"><p className="text-slate-600">Select a woman to view her assessments.</p></div>}{selectedPatient && <div><div className="mb-4"><p className="eyebrow">Selected woman</p><h2 className="section-title">{selectedPatient.fullName}</h2></div>{referralsLoading && <p className="mb-3 text-sm text-slate-600">Loading referrals...</p>}{referralsError && <StatusMessage>{referralsError}</StatusMessage>}{!referralsLoading && referrals.length > 0 && <div className="mb-4"><p className="eyebrow">Referrals</p><div className="mt-2 space-y-2">{referrals.map((referral) => <div className="history-item" key={referral.id}><span><strong>{referral.facility.name}</strong><small>{referral.status} · {new Date(referral.referralDate).toLocaleDateString()}</small></span><span className={`risk-${referral.assessment.riskLevel.toLowerCase()}`}>{referral.assessment.riskLevel}</span></div>)}</div></div>}{selectedAssessments.length === 0 && <section className="content-panel"><p className="text-slate-600">No assessments have been saved for this woman.</p></section>}{selectedAssessments.length > 0 && <div className="space-y-3">{selectedAssessments.map((assessment) => <button className="history-item" key={assessment.id} onClick={() => openAssessment(assessment.id)}><span><strong>{formatDate(assessment.assessmentDate)}</strong><small>{assessment.assessmentSymptoms.length} symptom records · {assessment.inputMethod}</small></span><span className={`risk-${assessment.riskLevel.toLowerCase()}`}>{assessment.riskLevel}</span></button>)}</div>}</div>}</section>
+      <section><h2 className="mb-3 font-semibold text-slate-900">{t('lhw.pageTitle')}</h2><div className="space-y-3">{profile.assignedPatients.map((patient) => <button className="history-item" key={patient.id} onClick={() => { openPatient(patient); setError('') }}><span><strong>{patient.fullName}</strong><small>{patient.district || patient.villageOrArea || t('lhw.locationNotRecorded')}</small></span></button>)}</div></section>
+      <section>{!selectedPatient && <div className="content-panel"><p className="text-slate-600">{t('lhw.selectWomanPrompt')}</p></div>}{selectedPatient && <div><div className="mb-4"><p className="eyebrow">{t('lhw.selectedWoman')}</p><h2 className="section-title">{selectedPatient.fullName}</h2></div>{referralsLoading && <p className="mb-3 text-sm text-slate-600">{t('lhw.loadingReferrals')}</p>}{referralsError && <StatusMessage>{referralsError}</StatusMessage>}{!referralsLoading && referrals.length > 0 && <div className="mb-4"><p className="eyebrow">{t('lhw.referralsEyebrow')}</p><div className="mt-2 space-y-2">{referrals.map((referral) => <div className="history-item" key={referral.id}><span><strong>{referral.facility.name}</strong><small>{referral.status} · {new Date(referral.referralDate).toLocaleDateString()}</small></span><span className={`risk-${referral.assessment.riskLevel.toLowerCase()}`}>{referral.assessment.riskLevel}</span></div>)}</div></div>}{selectedAssessments.length === 0 && <section className="content-panel"><p className="text-slate-600">{t('history.noAssessments')}</p></section>}{selectedAssessments.length > 0 && <div className="space-y-3">{selectedAssessments.map((assessment) => <button className="history-item" key={assessment.id} onClick={() => openAssessment(assessment.id)}><span><strong>{formatDate(assessment.assessmentDate)}</strong><small>{t('lhw.symptomRecords', { count: assessment.assessmentSymptoms.length })} · {assessment.inputMethod}</small></span><span className={`risk-${assessment.riskLevel.toLowerCase()}`}>{assessment.riskLevel}</span></button>)}</div>}</div>}</section>
     </div>}
   </div>
 }
