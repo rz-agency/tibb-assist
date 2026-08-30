@@ -22,6 +22,7 @@ enum PregnancyStatus {
 enum AssessmentInputMethod {
   VISUAL
   VOICE
+  AI
   OTHER
 }
 
@@ -62,9 +63,43 @@ enum FacilityType {
 
 enum ReferralStatus {
   RECOMMENDED
-  CONTACTED
-  COMPLETED
+  FACILITY_SELECTED
+  FACILITY_CONTACTED
+  TRANSPORT_ARRANGED
+  PATIENT_DEPARTED
+  PATIENT_ARRIVED
+  FOLLOW_UP_DUE
+  CLOSED
   CANCELLED
+}
+
+enum CareMissionStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  ESCALATED
+  CANCELLED
+}
+
+enum CareMissionAction {
+  CARE_MISSION_CREATED
+  REFERRAL_LINKED
+  FACILITY_SELECTED
+  FACILITY_CONTACTED
+  FACILITY_ACCEPTED
+  TRANSPORT_ARRANGED
+  EMERGENCY_CONTACT_NOTIFIED
+  PATIENT_DEPARTED
+  PATIENT_ARRIVED
+  FOLLOW_UP_SCHEDULED
+  CHECKLIST_ITEM_COMPLETED
+  CHECKLIST_ITEM_REOPENED
+  MISSION_ESCALATED
+  MISSION_COMPLETED
+  MISSION_CANCELLED
+  REFERRAL_FOLLOW_UP_DUE
+  REFERRAL_CLOSED
+  REFERRAL_CANCELLED
 }
 
 model User {
@@ -79,6 +114,9 @@ model User {
   patientProfile PatientProfile?
   lhwProfile     Lhw?
   assessedRecords Assessment[] @relation("AssessedByUser")
+  careMissionTimelineEntries CareMissionTimeline[] @relation("CareMissionTimelineAuthor")
+  completedChecklistItems    CareMissionChecklistItem[] @relation("CareMissionChecklistCompleter")
+  referralStatusHistory      ReferralStatusHistory[] @relation("ReferralStatusHistoryAuthor")
 
   @@map("users")
 }
@@ -153,6 +191,7 @@ model Assessment {
   assessedByUser   User            @relation("AssessedByUser", fields: [assessedByUserId], references: [id])
   assessmentSymptoms AssessmentSymptom[]
   referrals       Referral[]
+  careMission     CareMission?
 
   @@map("assessments")
 }
@@ -184,6 +223,7 @@ model Lhw {
 
   user     User @relation(fields: [userId], references: [id])
   assignedPatients PatientProfile[] @relation("AssignedLhw")
+  careMissions     CareMission[]
 
   @@map("lhws")
 }
@@ -220,6 +260,8 @@ model Referral {
   patient       PatientProfile @relation(fields: [patientId], references: [id])
   assessment    Assessment @relation(fields: [assessmentId], references: [id])
   facility      HealthcareFacility @relation(fields: [facilityId], references: [id])
+  careMission   CareMission?
+  statusHistory ReferralStatusHistory[]
 
   @@map("referrals")
 }
@@ -237,4 +279,75 @@ model EmergencyContact {
   patient      PatientProfile @relation(fields: [patientId], references: [id])
 
   @@map("emergency_contacts")
+}
+
+model CareMission {
+  id            Int                @id @default(autoincrement())
+  assessmentId  Int                @unique @map("assessment_id")
+  referralId    Int?               @unique @map("referral_id")
+  riskLevel     RiskLevel          @map("risk_level")
+  status        CareMissionStatus  @default(OPEN)
+  assignedLhwId Int?               @map("assigned_lhw_id")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  assessment    Assessment @relation(fields: [assessmentId], references: [id])
+  referral      Referral?  @relation(fields: [referralId], references: [id])
+  assignedLhw   Lhw?       @relation(fields: [assignedLhwId], references: [id])
+  timelineEntries  CareMissionTimeline[]
+  checklistItems   CareMissionChecklistItem[]
+
+  @@map("care_missions")
+}
+
+model CareMissionTimeline {
+  id              Int                @id @default(autoincrement())
+  careMissionId   Int                @map("care_mission_id")
+  action          CareMissionAction
+  fromStatus      CareMissionStatus?
+  toStatus        CareMissionStatus?
+  notes           String?            @db.Text
+  createdByUserId Int                @map("created_by_user_id")
+  createdAt       DateTime           @default(now()) @map("created_at")
+
+  careMission     CareMission @relation(fields: [careMissionId], references: [id])
+  createdByUser   User        @relation("CareMissionTimelineAuthor", fields: [createdByUserId], references: [id])
+
+  @@index([careMissionId, createdAt])
+  @@map("care_mission_timelines")
+}
+
+model CareMissionChecklistItem {
+  id                Int       @id @default(autoincrement())
+  careMissionId     Int       @map("care_mission_id")
+  taskKey           String    @map("task_key") @db.VarChar(100)
+  taskLabel         String?   @map("task_label") @db.VarChar(255)
+  isCompleted       Boolean   @default(false) @map("is_completed")
+  completedByUserId Int?      @map("completed_by_user_id")
+  completedAt       DateTime? @map("completed_at")
+  sortOrder         Int       @default(0) @map("sort_order")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  careMission       CareMission @relation(fields: [careMissionId], references: [id])
+  completedByUser   User?       @relation("CareMissionChecklistCompleter", fields: [completedByUserId], references: [id])
+
+  @@unique([careMissionId, taskKey], name: "care_mission_checklist_unique")
+  @@map("care_mission_checklist_items")
+}
+
+model ReferralStatusHistory {
+  id              Int              @id @default(autoincrement())
+  referralId      Int              @map("referral_id")
+  fromStatus      ReferralStatus?  @map("from_status")
+  toStatus        ReferralStatus   @map("to_status")
+  note            String?          @db.Text
+  createdByUserId Int              @map("created_by_user_id")
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  referral        Referral @relation(fields: [referralId], references: [id])
+  createdByUser   User     @relation("ReferralStatusHistoryAuthor", fields: [createdByUserId], references: [id])
+
+  @@index([referralId, createdAt])
+  @@map("referral_status_history")
 }

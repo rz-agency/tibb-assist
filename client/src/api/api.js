@@ -70,12 +70,21 @@ export const updatePregnancy = (id, details) => apiRequest(`/pregnancies/${id}`,
   body: JSON.stringify(details),
 })
 
-export const getReferrals = () => apiRequest('/referrals')
+export const getReferrals = (includeCompleted = false) =>
+  apiRequest(`/referrals${includeCompleted ? '?includeCompleted=true' : ''}`)
+
+export const getReferral = (id) => apiRequest(`/referrals/${id}`)
 
 export const createReferral = (details) => apiRequest('/referrals', {
   method: 'POST',
   body: JSON.stringify(details),
 })
+
+export const updateReferralStatus = (id, status, note) =>
+  apiRequest(`/referrals/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify(note ? { status, note } : { status }),
+  })
 
 export const getEmergencyContacts = (patientId) => apiRequest(`/patients/${patientId}/emergency-contacts`)
 
@@ -117,3 +126,14 @@ export const confirmAiAssessment = (extractedSymptoms) => apiRequest('/ai-assist
   method: 'POST',
   body: JSON.stringify({ extractedSymptoms }),
 })
+
+export const getCareMissions = (includeCompleted = false) =>
+  apiRequest(`/care-missions${includeCompleted ? '?includeCompleted=true' : ''}`)
+
+export const getCareMission = (id) => apiRequest(`/care-missions/${id}`)
+
+export const updateChecklistItem = (missionId, itemId, isCompleted) =>
+  apiRequest(`/care-missions/${missionId}/checklist-items/${itemId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isCompleted }),
+  })

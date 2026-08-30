@@ -10,6 +10,8 @@ import AssessmentPage from './pages/AssessmentPage'
 import AssessmentHistory from './pages/AssessmentHistory'
 import PregnancyPage from './pages/PregnancyPage'
 import AiAssistantPage from './pages/AiAssistantPage'
+import CareMissionPage from './pages/CareMissionPage'
+import ReferralJourneyPage from './pages/ReferralJourneyPage'
 import './App.css'
 
 function App() {
@@ -36,7 +38,11 @@ function App() {
   if (!user) return showRegister ? <Register onLogin={setUser} onShowLogin={() => setShowRegister(false)} /> : <Login onLogin={setUser} onShowRegister={() => setShowRegister(true)} />
 
   const content = user.role === 'LHW'
-    ? <LhwDashboard user={user} />
+    ? page === 'care-missions'
+      ? <CareMissionPage user={user} />
+      : page === 'referrals'
+        ? <ReferralJourneyPage user={user} />
+        : <LhwDashboard user={user} onNavigate={setPage} />
     : page === 'assessment'
     ? <AssessmentPage user={user} onNavigate={setPage} />
     : page === 'history'
@@ -45,7 +51,11 @@ function App() {
         ? <PregnancyPage />
         : page === 'ai-assistant'
           ? <AiAssistantPage user={user} onNavigate={setPage} />
-      : <Dashboard user={user} onNavigate={setPage} />
+          : page === 'care-missions'
+            ? <CareMissionPage user={user} />
+            : page === 'referrals'
+              ? <ReferralJourneyPage user={user} />
+              : <Dashboard user={user} onNavigate={setPage} />
 
   return <AppLayout user={user} currentPage={page} onNavigate={setPage} onLogout={logout}>{content}</AppLayout>
 }

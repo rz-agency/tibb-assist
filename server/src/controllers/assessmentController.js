@@ -1,5 +1,6 @@
 const prisma = require('../lib/prisma')
 const { calculateRiskAssessment } = require('../lib/riskAssessment')
+const { createCareMissionForAssessment } = require('../lib/careMissionService')
 
 const inputMethods = ['VISUAL', 'VOICE', 'OTHER']
 const answerStatuses = ['PRESENT', 'ABSENT', 'UNKNOWN']
@@ -168,7 +169,7 @@ async function createAssessment(req, res) {
 
     const patient = await prisma.patientProfile.findFirst({
       where: { id: patientId, ...accessFilter },
-      select: { id: true },
+      select: { id: true, assignedLhwId: true },
     })
 
     if (!patient) {
@@ -198,27 +199,39 @@ async function createAssessment(req, res) {
     const riskAssessment = calculateRiskAssessment(symptoms.map((symptom) => ({
       ...activeSymptomsById.get(parsePositiveInteger(symptom.symptomId)),
       answerStatus: symptom.answerStatus,
+      severity: symptom.severity || null,
     })))
 
-    const assessment = await prisma.assessment.create({
-      data: {
-        patientId,
-        pregnancyId,
-        assessedByUserId: req.user.id,
-        assessmentDate: new Date(),
-        inputMethod,
-        riskLevel: riskAssessment.riskLevel,
-        triageNotes: triageNotes ?? null,
-        assessmentSymptoms: {
-          create: symptoms.map((symptom) => ({
-            symptomId: parsePositiveInteger(symptom.symptomId),
-            answerStatus: symptom.answerStatus,
-            severity: symptom.severity ?? null,
-            notes: symptom.notes ?? null,
-          })),
+    const assessment = await prisma.$transaction(async (tx) => {
+      const created = await tx.assessment.create({
+        data: {
+          patientId,
+          pregnancyId,
+          assessedByUserId: req.user.id,
+          assessmentDate: new Date(),
+          inputMethod,
+          riskLevel: riskAssessment.riskLevel,
+          triageNotes: triageNotes ?? null,
+          assessmentSymptoms: {
+            create: symptoms.map((symptom) => ({
+              symptomId: parsePositiveInteger(symptom.symptomId),
+              answerStatus: symptom.answerStatus,
+              severity: symptom.severity ?? null,
+              notes: symptom.notes ?? null,
+            })),
+          },
         },
-      },
-      include: assessmentInclude,
+        include: assessmentInclude,
+      })
+
+      await createCareMissionForAssessment(tx, {
+        assessmentId: created.id,
+        riskLevel: riskAssessment.riskLevel,
+        assignedLhwId: patient.assignedLhwId ?? null,
+        createdByUserId: req.user.id,
+      })
+
+      return created
     })
 
     return res.status(201).json({ assessment })

@@ -13,6 +13,11 @@ function getSpeechLang(i18nLang) {
   return i18nLang
 }
 
+function cleanSymptomLabel(name) {
+  const cleaned = name.replace(/^(Severe|Heavy)\s+/i, '').trim()
+  return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : cleaned
+}
+
 function AiAssistantPage({ user, onNavigate }) {
   const { t, i18n } = useTranslation()
 
@@ -25,6 +30,7 @@ function AiAssistantPage({ user, onNavigate }) {
   const [isConfirming, setIsConfirming] = useState(false)
   const [assessment, setAssessment] = useState(null)
   const [aiExplanation, setAiExplanation] = useState('')
+  const [notedSymptoms, setNotedSymptoms] = useState([])
   const [facilities, setFacilities] = useState([])
   const [selectedFacilityId, setSelectedFacilityId] = useState('')
   const [referralNotes, setReferralNotes] = useState('')
@@ -38,6 +44,9 @@ function AiAssistantPage({ user, onNavigate }) {
   const audioChunksRef = useRef([])
   const streamRef = useRef(null)
   const messagesEndRef = useRef(null)
+  const messagesContainerRef = useRef(null)
+  const confirmSectionRef = useRef(null)
+  const resultSectionRef = useRef(null)
   const inputRef = useRef(null)
 
   const greetingShown = useRef(false)
@@ -52,6 +61,18 @@ function AiAssistantPage({ user, onNavigate }) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (!container) return
+    if (phase === 'ready' || phase === 'result') {
+      // Use requestAnimationFrame so the DOM has settled after React renders
+      // the confirm/result section before we measure and scroll.
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight
+      })
+    }
+  }, [phase, assessment])
 
   const startRecording = async () => {
     setError('')
@@ -143,6 +164,14 @@ function AiAssistantPage({ user, onNavigate }) {
     const messageText = text || inputText.trim()
     if (!messageText && !audioBlob) return
 
+    // When the assessment is ready and the user sends an affirmation,
+    // auto-trigger the confirm flow instead of sending another LLM message.
+    const AFFIRMATION_RE = /^(yes|yep|yeah|haan|han|ji|ji haan|bilkul|ok|okay|hmm|sure|confirm|proceed|start)/i
+    if (phase === 'ready' && !audioBlob && AFFIRMATION_RE.test(messageText)) {
+      handleConfirm()
+      return
+    }
+
     setError('')
     setIsSending(true)
 
@@ -182,7 +211,21 @@ function AiAssistantPage({ user, onNavigate }) {
       if (result.readyForAssessment) {
         setPhase('ready')
       } else {
-        setPhase('conversation')
+        // Text-based safety net: when the AI's chat reply tells the user to
+        // confirm AND extracted symptoms already include meaningful status
+        // (PRESENT or ABSENT), advance to 'ready' regardless of the
+        // readyForAssessment flag — the LLM extraction sometimes disagrees
+        // with its own conversational text.
+        const hasClearSymptoms = result.extractedSymptoms?.some(
+          (s) => s.answerStatus === 'PRESENT' || s.answerStatus === 'ABSENT',
+        )
+        const aiSaysConfirm = /confirm|button|assessment shuru|shuru|dabay|press|start|tayyar|ready/i.test(result.assistantReply || '')
+
+        if (hasClearSymptoms && aiSaysConfirm) {
+          setPhase('ready')
+        } else {
+          setPhase('conversation')
+        }
       }
     } catch (requestError) {
       setError(requestError.message)
@@ -209,6 +252,7 @@ function AiAssistantPage({ user, onNavigate }) {
       const result = await confirmAiAssessment(extractedSymptoms)
       setAssessment(result.assessment)
       setAiExplanation(result.aiExplanation)
+      setNotedSymptoms(result.notedSymptoms || [])
       setFacilities(result.facilities || [])
       if (result.facilities?.length > 0) {
         setSelectedFacilityId(result.facilities[0].id)
@@ -260,6 +304,7 @@ function AiAssistantPage({ user, onNavigate }) {
     setExtractedSymptoms([])
     setAssessment(null)
     setAiExplanation('')
+    setNotedSymptoms([])
     setFacilities([])
     setReferralSuccess('')
     setReferralError('')
@@ -280,7 +325,7 @@ function AiAssistantPage({ user, onNavigate }) {
       </div>
 
       <div className="ai-chat-panel">
-        <div className="ai-messages">
+        <div className="ai-messages" ref={messagesContainerRef}>
           {messages.map((msg, index) => {
             if (msg.type === 'system') {
               return <div className="ai-system-msg" key={index}><p>{msg.content}</p></div>
@@ -308,13 +353,11 @@ function AiAssistantPage({ user, onNavigate }) {
               <p className="flex items-center gap-2 text-red-600"><span className="ai-recording-dot" />{t('ai.recording')}</p>
             </div>
           )}
-          <div ref={messagesEndRef} />
-        </div>
 
-        {error && <div className="px-4 pb-2"><StatusMessage>{error}</StatusMessage></div>}
+          {error && <StatusMessage>{error}</StatusMessage>}
 
-        {showResult && (
-          <div className="ai-result-section">
+          {showResult && (
+            <div className="ai-result-section" ref={resultSectionRef}>
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="detail-label">{t('assessment.riskLevel')}</p>
@@ -330,11 +373,25 @@ function AiAssistantPage({ user, onNavigate }) {
               <ul className="mt-3 space-y-2">
                 {assessment.assessmentSymptoms.filter((s) => s.answerStatus !== 'UNKNOWN').map((item) => (
                   <li className="rounded-lg bg-slate-50 px-3 py-2 text-sm" key={item.id}>
-                    <span className="font-medium">{item.symptom.name}</span>
+                    <span className="font-medium">{cleanSymptomLabel(item.symptom.name)}</span>
                     <span className="ms-2 text-slate-500">{item.answerStatus}{item.severity ? ` · ${item.severity}` : ''}</span>
                   </li>
                 ))}
               </ul>
+              {notedSymptoms.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-slate-700">{t('assessment.notedSymptoms')}</h3>
+                  <p className="mt-1 text-xs text-slate-500">{t('assessment.notedDisclaimer')}</p>
+                  <ul className="mt-2 space-y-1">
+                    {notedSymptoms.filter((s) => s.answerStatus !== 'UNKNOWN').map((s, i) => (
+                      <li className="rounded-lg bg-amber-50 px-3 py-2 text-sm" key={i}>
+                        <span className="font-medium">{s.name}</span>
+                        <span className="ms-2 text-slate-500">{s.answerStatus}{s.severity ? ` · ${s.severity}` : ''}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             {facilities.length > 0 && (
@@ -369,7 +426,7 @@ function AiAssistantPage({ user, onNavigate }) {
         )}
 
         {phase === 'ready' && !showResult && (
-          <div className="ai-confirm-section">
+          <div className="ai-confirm-section" ref={confirmSectionRef}>
             <p className="font-semibold text-slate-900">{t('ai.confirmTitle')}</p>
             {extractedSymptoms.length > 0 && (
               <ul className="mt-3 space-y-1 text-sm">
@@ -390,6 +447,9 @@ function AiAssistantPage({ user, onNavigate }) {
             </div>
           </div>
         )}
+
+          <div ref={messagesEndRef} />
+        </div>
 
         {!showResult && phase !== 'ready' && (
           <form className="ai-input-bar" onSubmit={handleSubmit}>

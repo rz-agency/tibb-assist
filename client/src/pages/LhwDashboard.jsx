@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getAssessment, getAssessments, getLhwProfile, getReferrals, updateLhwProfile } from '../api/api'
+import { getAssessment, getAssessments, getCareMissions, getLhwProfile, getReferrals, updateLhwProfile } from '../api/api'
 import StatusMessage from '../components/StatusMessage'
 
 const RISK_LABEL_KEY = { GREEN: 'assessment.riskGreen', YELLOW: 'assessment.riskYellow', RED: 'assessment.riskRed' }
+
+function cleanSymptomLabel(name) {
+  const cleaned = name.replace(/^(Severe|Heavy)\s+/i, '').trim()
+  return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : cleaned
+}
 
 function formatDate(value) {
   return new Date(value).toLocaleString()
 }
 
-function LhwDashboard({ user }) {
+function LhwDashboard({ user, onNavigate }) {
   const { t } = useTranslation()
   const [profile, setProfile] = useState(null)
   const [assessments, setAssessments] = useState([])
@@ -26,20 +31,30 @@ function LhwDashboard({ user }) {
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileSuccess, setProfileSuccess] = useState('')
   const [profileError, setProfileError] = useState('')
+  const [careMissions, setCareMissions] = useState([])
+  const [careMissionsLoading, setCareMissionsLoading] = useState(true)
+  const [careMissionsError, setCareMissionsError] = useState('')
 
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        const [lhwProfile, assessmentResult] = await Promise.all([
+        const [lhwProfile, assessmentResult, missionsResult] = await Promise.all([
           getLhwProfile(user.id),
           getAssessments(),
+          getCareMissions().catch((err) => ({ careMissions: [], error: err.message })),
         ])
         setProfile(lhwProfile)
         setAssessments(assessmentResult.assessments)
+        if (missionsResult.error) {
+          setCareMissionsError(missionsResult.error)
+        } else {
+          setCareMissions(missionsResult.careMissions)
+        }
       } catch (requestError) {
         setError(requestError.message)
       } finally {
         setLoading(false)
+        setCareMissionsLoading(false)
       }
     }
 
@@ -126,7 +141,7 @@ function LhwDashboard({ user }) {
           <div><span className="detail-label">{t('history.patient')}</span><span>{selectedAssessment.patient.fullName}</span></div>
         </div>
         {selectedAssessment.pregnancy && <p className="mt-5 text-sm text-slate-600">{t('history.pregnancyPrefix')} {selectedAssessment.pregnancy.pregnancyStatus}{selectedAssessment.pregnancy.gestationalWeek !== null ? ` · ${selectedAssessment.pregnancy.gestationalWeek} ${t('assessment.weeks')}` : ''}</p>}
-        <div className="mt-6"><h2 className="font-semibold text-slate-900">{t('history.recordedSymptoms')}</h2><ul className="mt-3 space-y-2">{selectedAssessment.assessmentSymptoms.map((item) => <li className="rounded-lg bg-slate-50 px-4 py-3" key={item.id}><span className="font-medium">{item.symptom.name}</span><span className="ml-2 text-sm text-slate-500">{item.answerStatus}{item.severity ? ` · ${item.severity}` : ''}</span>{item.notes && <p className="mt-2 text-sm text-slate-600">{t('history.notesPrefix')} {item.notes}</p>}</li>)}</ul></div>
+        <div className="mt-6"><h2 className="font-semibold text-slate-900">{t('history.recordedSymptoms')}</h2><ul className="mt-3 space-y-2">{selectedAssessment.assessmentSymptoms.map((item) => <li className="rounded-lg bg-slate-50 px-4 py-3" key={item.id}><span className="font-medium">{cleanSymptomLabel(item.symptom.name)}</span><span className="ml-2 text-sm text-slate-500">{item.answerStatus}{item.severity ? ` · ${item.severity}` : ''}</span>{item.notes && <p className="mt-2 text-sm text-slate-600">{t('history.notesPrefix')} {item.notes}</p>}</li>)}</ul></div>
       </section>
     </div>
   }
@@ -139,6 +154,33 @@ function LhwDashboard({ user }) {
     <div className="mb-8"><p className="eyebrow">{t('lhw.workspaceEyebrow')}</p><h1 className="page-title">{t('lhw.pageTitle')}</h1><p className="mt-3 text-slate-600">{profile.fullName} · {user.email}</p></div>
     {error && <StatusMessage>{error}</StatusMessage>}
     {profileSuccess && <StatusMessage tone="success">{profileSuccess}</StatusMessage>}
+    <section className="mt-6 mb-6">
+      <p className="eyebrow">{t('careMission.pageTitle')}</p>
+      {careMissionsLoading && <p className="mt-3 text-slate-600">{t('careMission.loading')}</p>}
+      {careMissionsError && <StatusMessage>{careMissionsError}</StatusMessage>}
+      {!careMissionsLoading && !careMissionsError && careMissions.length === 0 && <p className="mt-3 text-slate-600">{t('careMission.noMissions')}</p>}
+      {!careMissionsLoading && careMissions.length > 0 && (
+        <div className="mt-3 space-y-3">
+          {careMissions.map((mission) => {
+            const risk = mission.riskLevel.toLowerCase()
+            return (
+              <button className={`cm-mission-card cm-mission-${risk}`} key={mission.id} onClick={() => onNavigate('care-missions')}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className={`risk-${risk}`}>{t(RISK_LABEL_KEY[mission.riskLevel])}</span>
+                    <p className="mt-1 font-semibold text-slate-900">{mission.assessment?.patient?.fullName || t('careMission.patient')}</p>
+                    <p className="mt-1 text-sm text-slate-500">{new Date(mission.createdAt).toLocaleString()}</p>
+                  </div>
+                  <span className={`status-badge status-${mission.status.toLowerCase() === 'open' ? 'recommended' : mission.status.toLowerCase() === 'completed' ? 'completed' : 'contacted'}`}>
+                    {mission.status.replace('_', ' ')}
+                  </span>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </section>
     {profileEditing && (
       <section className="content-panel mb-6">
         <h2 className="section-title">{t('common.editProfile')}</h2>

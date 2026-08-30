@@ -37,9 +37,24 @@
 .detail-label { display: block; margin-bottom: 5px; color: #71827e; font-size: 12px; text-transform: uppercase; }
 .status-badge { display: inline-block; border-radius: 999px; padding: 4px 9px; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 800; }
 .status-recommended { background: #fff0d8; color: #94621c; }
-.status-contacted { background: #dce8f4; color: #2b5a8c; }
-.status-completed { background: #e2f2e8; color: #176b4d; }
+.status-facility_selected { background: #e8dff5; color: #5b3d8c; }
+.status-facility_contacted { background: #dce8f4; color: #2b5a8c; }
+.status-transport_arranged { background: #d5eef4; color: #1a6b7a; }
+.status-patient_departed { background: #d8eddf; color: #2a6b4d; }
+.status-patient_arrived { background: #c7e6d3; color: #135a3a; }
+.status-follow_up_due { background: #fcecd5; color: #8c5a1a; }
+.status-closed { background: #e2f2e8; color: #176b4d; }
 .status-cancelled { background: #f1f1f1; color: #6b6b6b; }
+
+/* Referral journey timeline */
+.referral-timeline-steps { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.referral-step { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; min-width: 80px; position: relative; }
+.referral-step-dot { width: 18px; height: 18px; border-radius: 50%; background: #e2e2e2; border: 2px solid #d4d4d4; transition: background 0.2s, border-color 0.2s; }
+.referral-step-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; text-align: center; line-height: 1.2; }
+.referral-step-done .referral-step-dot { background: #5ea48b; border-color: #4a9079; }
+.referral-step-done .referral-step-label { color: #176b4d; }
+.referral-step-active .referral-step-dot { background: #e2a65d; border-color: #c98e3d; box-shadow: 0 0 0 3px rgba(226,166,93,0.3); }
+.referral-step-active .referral-step-label { color: #94621c; font-weight: 700; }
 
 /* RTL overrides for Dashboard and shared components */
 html[dir="rtl"] .profile-strip { border-left: none; border-right: 4px solid #e2a65d; }
@@ -61,6 +76,7 @@ html[dir="rtl"] .history-item { text-align: right; }
 }
 .ai-messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 20px;
   display: flex;
@@ -169,6 +185,114 @@ html[dir="rtl"] .history-item { text-align: right; }
 }
 html[dir="rtl"] .ai-bubble-assistant { align-self: flex-end; border-bottom-end-radius: 4px; border-bottom-start-radius: 14px; }
 html[dir="rtl"] .ai-bubble-user { align-self: flex-start; border-bottom-start-radius: 4px; border-bottom-end-radius: 14px; }
+
+/* Care Mission UI */
+.cm-mission-card {
+  display: block;
+  width: 100%;
+  border: 1px solid #d9e0dc;
+  border-radius: 12px;
+  background: #fff;
+  padding: 16px 20px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s, transform .15s;
+}
+.cm-mission-card:hover { border-color: #8bb9ae; transform: translateY(-1px); }
+.cm-mission-red { border-inline-start: 4px solid #e53e3e; }
+.cm-mission-yellow { border-inline-start: 4px solid #d69e2e; }
+.cm-risk-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 8px;
+}
+.cm-risk-banner-red { background: #fff5f5; }
+.cm-risk-banner-yellow { background: #fefce8; }
+.cm-risk-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.cm-risk-banner-red .cm-risk-icon { background: #e53e3e; color: #fff; }
+.cm-risk-banner-yellow .cm-risk-icon { background: #d69e2e; color: #fff; }
+.cm-risk-level { font-weight: 700; font-size: 16px; color: #1a202c; }
+.cm-risk-explanation { margin-top: 2px; font-size: 14px; color: #4a5568; }
+.cm-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px 14px;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: border-color .15s, background .15s;
+}
+.cm-checklist-item:hover { border-color: #147d70; }
+.cm-checklist-item:disabled { opacity: .6; cursor: wait; }
+.cm-checklist-done { background: #f0fdf4; border-color: #86efac; }
+.cm-checklist-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cm-checklist-done .cm-checklist-check { border-color: #16a34a; background: #16a34a; color: #fff; }
+.cm-checklist-label { flex: 1; font-size: 14px; color: #1e293b; }
+.cm-checklist-spinner { font-size: 14px; color: #94a3b8; animation: ai-pulse 1s infinite; }
+.cm-progress-bar { height: 6px; border-radius: 3px; background: #e2e8f0; margin-top: 8px; overflow: hidden; }
+.cm-progress-fill { height: 100%; border-radius: 3px; background: #147d70; transition: width .3s; }
+.cm-info-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 14px 16px;
+  margin-top: 8px;
+}
+.cm-timeline { position: relative; margin-top: 12px; padding-inline-start: 4px; }
+.cm-timeline-entry { position: relative; padding-inline-start: 28px; padding-bottom: 16px; }
+.cm-timeline-entry:last-child { padding-bottom: 0; }
+.cm-timeline-dot {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #147d70;
+}
+.cm-timeline-line {
+  position: absolute;
+  inset-inline-start: 4px;
+  top: 18px;
+  bottom: 0;
+  width: 2px;
+  background: #d9e0dc;
+}
+.cm-timeline-content { display: flex; flex-direction: column; gap: 2px; }
+.cm-timeline-action { font-size: 14px; color: #1e293b; font-weight: 500; }
+.cm-timeline-time { font-size: 12px; color: #94a3b8; }
+html[dir="rtl"] .cm-mission-card { text-align: right; }
+html[dir="rtl"] .cm-checklist-item { text-align: right; }
+html[dir="rtl"] .cm-timeline-entry { padding-inline-start: 28px; }
+html[dir="rtl"] .cm-timeline-dot { inset-inline-start: 0; }
+html[dir="rtl"] .cm-timeline-line { inset-inline-start: 4px; }
 
 .hero {
   position: relative;

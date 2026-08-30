@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getPatientProfile, getReferrals, updatePatientProfile } from '../api/api'
+import { getCareMissions, getPatientProfile, getReferrals, updatePatientProfile } from '../api/api'
 import EmergencyContacts from '../components/EmergencyContacts'
 import StatusMessage from '../components/StatusMessage'
 
@@ -27,6 +27,9 @@ function Dashboard({ user, onNavigate }) {
   const [referrals, setReferrals] = useState([])
   const [referralsLoading, setReferralsLoading] = useState(true)
   const [referralsError, setReferralsError] = useState('')
+  const [careMissions, setCareMissions] = useState([])
+  const [careMissionsLoading, setCareMissionsLoading] = useState(true)
+  const [careMissionsError, setCareMissionsError] = useState('')
 
   useEffect(() => {
     getPatientProfile(user.id)
@@ -49,6 +52,10 @@ function Dashboard({ user, onNavigate }) {
       .then((result) => setReferrals(result.referrals))
       .catch((requestError) => setReferralsError(requestError.message))
       .finally(() => setReferralsLoading(false))
+    getCareMissions()
+      .then((result) => setCareMissions(result.careMissions))
+      .catch((requestError) => setCareMissionsError(requestError.message))
+      .finally(() => setCareMissionsLoading(false))
   }, [user.id])
 
   const updateProfileField = (event) => {
@@ -147,11 +154,37 @@ function Dashboard({ user, onNavigate }) {
         <button className="action-card" onClick={() => onNavigate('pregnancy')}><span className="action-icon">♡</span><strong>{t('dashboard.pregnancyCardTitle')}</strong><span>{t('dashboard.pregnancyCardDescription')}</span></button>
       </div>
       <section className="mt-8">
+        <p className="eyebrow">{t('careMission.pageTitle')}</p>
+        {careMissionsLoading && <p className="mt-3 text-slate-600">{t('careMission.loading')}</p>}
+        {careMissionsError && <StatusMessage>{careMissionsError}</StatusMessage>}
+        {!careMissionsLoading && !careMissionsError && careMissions.length === 0 && <p className="mt-3 text-slate-600">{t('careMission.noMissions')}</p>}
+        {!careMissionsLoading && careMissions.length > 0 && (
+          <div className="mt-3 space-y-3">
+            {careMissions.map((mission) => {
+              const risk = mission.riskLevel.toLowerCase()
+              return (
+                <button className={`cm-mission-card cm-mission-${risk}`} key={mission.id} onClick={() => onNavigate('care-missions')}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <span className={`risk-${risk}`}>{t(RISK_LABEL_KEY[mission.riskLevel])}</span>
+                      <p className="mt-1 text-sm text-slate-500">{new Date(mission.createdAt).toLocaleString()}</p>
+                    </div>
+                    <span className={`status-badge status-${mission.status.toLowerCase() === 'open' ? 'recommended' : mission.status.toLowerCase() === 'completed' ? 'completed' : 'contacted'}`}>
+                      {mission.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </section>
+      <section className="mt-8">
         <p className="eyebrow">{t('dashboard.referralsEyebrow')}</p>
         {referralsLoading && <p className="mt-3 text-slate-600">{t('dashboard.loadingReferrals')}</p>}
         {referralsError && <StatusMessage>{referralsError}</StatusMessage>}
         {!referralsLoading && !referralsError && referrals.length === 0 && <p className="mt-3 text-slate-600">{t('dashboard.noReferrals')}</p>}
-        {!referralsLoading && referrals.length > 0 && <div className="mt-3 space-y-3">{referrals.map((referral) => <div className="history-item" key={referral.id}><span><strong>{referral.facility.name}</strong><small>{referral.facility.facilityType.replace('_', ' ')}{referral.facility.city ? ` · ${referral.facility.city}` : ''}</small><small>{t('dashboard.assessmentDate', { date: new Date(referral.assessment.assessmentDate).toLocaleDateString() })} · <span className={`risk-${referral.assessment.riskLevel.toLowerCase()}`}>{t(RISK_LABEL_KEY[referral.assessment.riskLevel])}</span></small></span><span className={`status-badge status-${referral.status.toLowerCase()}`}>{referral.status}</span></div>)}</div>}
+        {!referralsLoading && referrals.length > 0 && <div className="mt-3 space-y-3">{referrals.map((referral) => <button className="history-item w-full cursor-pointer text-left" key={referral.id} onClick={() => onNavigate('referrals')}><span><strong>{referral.facility.name}</strong><small>{referral.facility.facilityType.replace('_', ' ')}{referral.facility.city ? ` · ${referral.facility.city}` : ''}</small><small>{t('dashboard.assessmentDate', { date: new Date(referral.assessment.assessmentDate).toLocaleDateString() })} · <span className={`risk-${referral.assessment.riskLevel.toLowerCase()}`}>{t(RISK_LABEL_KEY[referral.assessment.riskLevel])}</span></small></span><span className={`status-badge status-${referral.status.toLowerCase()}`}>{referral.status}</span></button>)}</div>}
       </section>
       {patientId && <EmergencyContacts patientId={patientId} />}
     </div>

@@ -5,10 +5,16 @@ function AppLayout({ user, currentPage, onNavigate, onLogout, children }) {
   const { t } = useTranslation()
 
   const navItems = user.role === 'LHW'
-    ? [['dashboard', t('layout.navAssignedWomen')]]
+    ? [
+        ['dashboard', t('layout.navAssignedWomen')],
+        ['care-missions', t('layout.navCareMissions')],
+        ['referrals', t('layout.navReferrals')],
+      ]
     : [
         ['dashboard', t('layout.navDashboard')],
         ['ai-assistant', t('layout.navAiAssistant')],
+        ['care-missions', t('layout.navCareMissions')],
+        ['referrals', t('layout.navReferrals')],
         ['pregnancy', t('layout.navPregnancy')],
         ['assessment', t('layout.navNewAssessment')],
         ['history', t('layout.navHistory')],
