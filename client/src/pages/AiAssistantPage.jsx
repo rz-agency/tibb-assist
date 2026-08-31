@@ -312,7 +312,7 @@ function AiAssistantPage({ user, onNavigate }) {
   }
 
   if (user.role !== 'WOMAN') {
-    return <section className="content-panel"><h1 className="section-title">{t('ai.pageTitle')}</h1><p className="mt-3 text-slate-600">{t('ai.entryRestriction')}</p></section>
+    return <section className="content-panel text-center"><h1 className="section-title">{t('ai.pageTitle')}</h1><p className="mt-3 text-[var(--text-secondary)]">{t('ai.entryRestriction')}</p></section>
   }
 
   const showResult = phase === 'result' && assessment
@@ -322,6 +322,7 @@ function AiAssistantPage({ user, onNavigate }) {
       <div className="mb-6">
         <p className="eyebrow">{t('ai.pageTitle')}</p>
         <h1 className="page-title">{t('ai.subtitle')}</h1>
+        <p className="mt-2 text-sm text-[var(--text-secondary)]">{t('ai.chatHelper', { defaultValue: 'Tell me how you\u2019re feeling in your own words.' })}</p>
       </div>
 
       <div className="ai-chat-panel">
@@ -335,10 +336,10 @@ function AiAssistantPage({ user, onNavigate }) {
               <div className={`ai-bubble ${isUser ? 'ai-bubble-user' : 'ai-bubble-assistant'}`} key={index}>
                 <p>{msg.content}</p>
                 {msg.transcribed && msg.type === 'voice' && (
-                  <p className="mt-1 text-xs text-slate-400">{t('ai.transcribed')}: {msg.transcribed}</p>
+                  <p className="mt-1 text-xs text-[var(--text-muted)]">{t('ai.transcribed')}: {msg.transcribed}</p>
                 )}
                 {isUser && msg.type === 'voice' && (
-                  <span className="mt-1 inline-block text-xs text-slate-400">🎤 {t('ai.voiceLabel')}</span>
+                  <span className="mt-1 inline-block text-xs text-[var(--text-muted)]">{t('ai.voiceLabel')}</span>
                 )}
               </div>
             )
@@ -363,30 +364,30 @@ function AiAssistantPage({ user, onNavigate }) {
                 <p className="detail-label">{t('assessment.riskLevel')}</p>
                 <span className={`risk-${assessment.riskLevel.toLowerCase()}`}>{t(RISK_LABEL_KEY[assessment.riskLevel])}</span>
               </div>
-              <p className="text-xs text-slate-500">{t('assessment.calculatedFromAnswers')}</p>
+              <p className="text-xs text-[var(--text-muted)]">{t('assessment.calculatedFromAnswers')}</p>
             </div>
-            {aiExplanation && <p className="mt-4 text-slate-700">{aiExplanation}</p>}
-            {assessment.pregnancy && <p className="mt-3 text-sm text-slate-600">{t('assessment.linkedPregnancy')} {assessment.pregnancy.pregnancyStatus}</p>}
+            {aiExplanation && <p className="mt-4 text-[var(--text-secondary)]">{aiExplanation}</p>}
+            {assessment.pregnancy && <p className="mt-3 text-sm text-[var(--text-muted)]">{t('assessment.linkedPregnancy')} {assessment.pregnancy.pregnancyStatus}</p>}
 
-            <div className="mt-6 border-t border-slate-100 pt-5">
-              <h2 className="font-semibold text-slate-900">{t('assessment.recordedAnswers')}</h2>
+            <div className="mt-6 border-t border-[var(--border-soft)] pt-5">
+              <h2 className="font-semibold text-[var(--text-primary)]">{t('assessment.recordedAnswers')}</h2>
               <ul className="mt-3 space-y-2">
                 {assessment.assessmentSymptoms.filter((s) => s.answerStatus !== 'UNKNOWN').map((item) => (
-                  <li className="rounded-lg bg-slate-50 px-3 py-2 text-sm" key={item.id}>
-                    <span className="font-medium">{cleanSymptomLabel(item.symptom.name)}</span>
-                    <span className="ms-2 text-slate-500">{item.answerStatus}{item.severity ? ` · ${item.severity}` : ''}</span>
+                  <li className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-subtle)] px-3 py-2 text-sm" key={item.id}>
+                    <span className="font-medium text-[var(--text-primary)]">{cleanSymptomLabel(item.symptom.name)}</span>
+                    <span className="ms-2 text-[var(--text-muted)]">{item.answerStatus}{item.severity ? ` · ${item.severity}` : ''}</span>
                   </li>
                 ))}
               </ul>
               {notedSymptoms.length > 0 && (
                 <div className="mt-4">
-                  <h3 className="text-sm font-medium text-slate-700">{t('assessment.notedSymptoms')}</h3>
-                  <p className="mt-1 text-xs text-slate-500">{t('assessment.notedDisclaimer')}</p>
+                  <h3 className="text-sm font-medium text-[var(--text-secondary)]">{t('assessment.notedSymptoms')}</h3>
+                  <p className="mt-1 text-xs text-[var(--text-muted)]">{t('assessment.notedDisclaimer')}</p>
                   <ul className="mt-2 space-y-1">
                     {notedSymptoms.filter((s) => s.answerStatus !== 'UNKNOWN').map((s, i) => (
-                      <li className="rounded-lg bg-amber-50 px-3 py-2 text-sm" key={i}>
+                      <li className="rounded-lg bg-[var(--amber-50)] border border-[var(--amber-200)] px-3 py-2 text-sm" key={i}>
                         <span className="font-medium">{s.name}</span>
-                        <span className="ms-2 text-slate-500">{s.answerStatus}{s.severity ? ` · ${s.severity}` : ''}</span>
+                        <span className="ms-2 text-[var(--text-muted)]">{s.answerStatus}{s.severity ? ` · ${s.severity}` : ''}</span>
                       </li>
                     ))}
                   </ul>
@@ -395,9 +396,9 @@ function AiAssistantPage({ user, onNavigate }) {
             </div>
 
             {facilities.length > 0 && (
-              <div className="mt-6 border-t border-slate-100 pt-5">
-                <h2 className="font-semibold text-slate-900">{t('assessment.healthcareReferral')}</h2>
-                <p className="mt-2 text-sm text-slate-600">{t('assessment.diagnosisDisclaimer')}</p>
+              <div className="mt-6 border-t border-[var(--border-soft)] pt-5">
+                <h2 className="font-semibold text-[var(--text-primary)]">{t('assessment.healthcareReferral')}</h2>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">{t('assessment.diagnosisDisclaimer')}</p>
                 {referralSuccess && <StatusMessage tone="success">{referralSuccess}</StatusMessage>}
                 {!referralSuccess && (
                   <form className="mt-4 space-y-3" onSubmit={submitReferral}>
@@ -406,7 +407,7 @@ function AiAssistantPage({ user, onNavigate }) {
                         {facilities.map((f) => <option key={f.id} value={f.id}>{f.name}{f.city ? ` - ${f.city}` : ''}</option>)}
                       </select>
                     </label>
-                    <label className="form-label">{t('assessment.notes')} <span className="font-normal text-slate-400">{t('common.optional')}</span>
+                    <label className="form-label">{t('assessment.notes')} <span className="font-normal text-[var(--text-muted)]">{t('common.optional')}</span>
                       <textarea className="form-input" rows="2" value={referralNotes} onChange={(e) => setReferralNotes(e.target.value)} />
                     </label>
                     {referralError && <StatusMessage>{referralError}</StatusMessage>}
@@ -427,14 +428,14 @@ function AiAssistantPage({ user, onNavigate }) {
 
         {phase === 'ready' && !showResult && (
           <div className="ai-confirm-section" ref={confirmSectionRef}>
-            <p className="font-semibold text-slate-900">{t('ai.confirmTitle')}</p>
+            <p className="font-semibold text-[var(--text-primary)]">{t('ai.confirmTitle')}</p>
             {extractedSymptoms.length > 0 && (
               <ul className="mt-3 space-y-1 text-sm">
                 {extractedSymptoms.map((s, i) => (
                   <li className="flex items-center gap-2" key={i}>
-                    <span className={`inline-block h-2 w-2 rounded-full ${s.answerStatus === 'PRESENT' ? 'bg-red-400' : s.answerStatus === 'ABSENT' ? 'bg-green-400' : 'bg-slate-300'}`} />
-                    <span className="font-medium">{s.code.replace(/_/g, ' ')}</span>
-                    <span className="text-slate-500">{s.answerStatus}{s.severity ? ` · ${s.severity}` : ''}</span>
+                    <span className={`inline-block h-2 w-2 rounded-full ${s.answerStatus === 'PRESENT' ? 'bg-[var(--coral-400)]' : s.answerStatus === 'ABSENT' ? 'bg-[var(--teal-400)]' : 'bg-[var(--border-soft)]'}`} />
+                    <span className="font-medium text-[var(--text-primary)]">{s.code.replace(/_/g, ' ')}</span>
+                    <span className="text-[var(--text-muted)]">{s.answerStatus}{s.severity ? ` · ${s.severity}` : ''}</span>
                   </li>
                 ))}
               </ul>

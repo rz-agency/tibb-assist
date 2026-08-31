@@ -58,6 +58,11 @@ export const updateLhwProfile = (userId, details) => apiRequest(`/lhws/${userId}
 
 export const getFacilities = () => apiRequest('/facilities')
 
+export const getNearbyFacilities = (lat, lng, radius = 5000) =>
+  apiRequest(`/facilities/nearby?lat=${lat}&lng=${lng}&radius=${radius}`).then(
+    (response) => response.facilities,
+  )
+
 export const getPregnancies = () => apiRequest('/pregnancies')
 
 export const createPregnancy = (details) => apiRequest('/pregnancies', {

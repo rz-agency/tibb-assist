@@ -12,6 +12,7 @@ import PregnancyPage from './pages/PregnancyPage'
 import AiAssistantPage from './pages/AiAssistantPage'
 import CareMissionPage from './pages/CareMissionPage'
 import ReferralJourneyPage from './pages/ReferralJourneyPage'
+import NearbyFacilitiesPage from './pages/NearbyFacilitiesPage'
 import './App.css'
 
 function App() {
@@ -42,7 +43,9 @@ function App() {
       ? <CareMissionPage user={user} />
       : page === 'referrals'
         ? <ReferralJourneyPage user={user} />
-        : <LhwDashboard user={user} onNavigate={setPage} />
+        : page === 'nearby'
+          ? <NearbyFacilitiesPage />
+          : <LhwDashboard user={user} onNavigate={setPage} />
     : page === 'assessment'
     ? <AssessmentPage user={user} onNavigate={setPage} />
     : page === 'history'
@@ -55,7 +58,9 @@ function App() {
             ? <CareMissionPage user={user} />
             : page === 'referrals'
               ? <ReferralJourneyPage user={user} />
-              : <Dashboard user={user} onNavigate={setPage} />
+              : page === 'nearby'
+                ? <NearbyFacilitiesPage />
+                : <Dashboard user={user} onNavigate={setPage} />
 
   return <AppLayout user={user} currentPage={page} onNavigate={setPage} onLogout={logout}>{content}</AppLayout>
 }

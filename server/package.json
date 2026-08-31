@@ -1,4 +1,4 @@
-{
+ {
   "name": "tibb-assist-server",
   "version": "1.0.0",
   "description": "Backend for Tibb Assist",
@@ -12,6 +12,9 @@
     "seed": "node prisma/seed.js"
   },
   "license": "MIT",
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "dependencies": {
     "@prisma/client": "5.22.0",
     "bcryptjs": "^3.0.0",

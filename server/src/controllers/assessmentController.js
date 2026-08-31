@@ -1,6 +1,7 @@
 const prisma = require('../lib/prisma')
 const { calculateRiskAssessment } = require('../lib/riskAssessment')
 const { createCareMissionForAssessment } = require('../lib/careMissionService')
+const { getGestationalWeeks } = require('../lib/gestationalAge')
 
 const inputMethods = ['VISUAL', 'VOICE', 'OTHER']
 const answerStatuses = ['PRESENT', 'ABSENT', 'UNKNOWN']
@@ -185,6 +186,20 @@ async function createAssessment(req, res) {
       if (!pregnancy) return res.status(400).json({ error: 'pregnancyId does not belong to patientId.' })
     }
 
+    // Resolve gestational age from the linked (or active) pregnancy.
+    // This is needed for preterm/postterm risk escalation in the engine.
+    const activePregnancy = await prisma.pregnancy.findFirst({
+      where: {
+        patientId,
+        ...(pregnancyId ? { id: pregnancyId } : { pregnancyStatus: 'ACTIVE' }),
+      },
+      select: { id: true, lmpDate: true },
+    })
+
+    const gestationalWeeks = activePregnancy
+      ? getGestationalWeeks(activePregnancy.lmpDate)
+      : null
+
     const symptomIds = symptoms.map((symptom) => parsePositiveInteger(symptom.symptomId))
     const activeSymptoms = await prisma.symptom.findMany({
       where: { id: { in: symptomIds }, isActive: true },
@@ -200,7 +215,7 @@ async function createAssessment(req, res) {
       ...activeSymptomsById.get(parsePositiveInteger(symptom.symptomId)),
       answerStatus: symptom.answerStatus,
       severity: symptom.severity || null,
-    })))
+    })), gestationalWeeks)
 
     const assessment = await prisma.$transaction(async (tx) => {
       const created = await tx.assessment.create({
@@ -211,6 +226,7 @@ async function createAssessment(req, res) {
           assessmentDate: new Date(),
           inputMethod,
           riskLevel: riskAssessment.riskLevel,
+          resultCode: riskAssessment.resultCode,
           triageNotes: triageNotes ?? null,
           assessmentSymptoms: {
             create: symptoms.map((symptom) => ({

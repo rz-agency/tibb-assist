@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createPregnancy, getPregnancies, updatePregnancy } from '../api/api'
 import StatusMessage from '../components/StatusMessage'
+import { HeartIcon, BabyIcon } from '../components/Illustrations'
 
 const emptyForm = {
   pregnancyStatus: 'ACTIVE',
@@ -13,6 +14,17 @@ const emptyForm = {
 
 function dateInputValue(value) {
   return value ? value.slice(0, 10) : ''
+}
+
+/** Client-side preview only — the server independently calculates dueDate from LMP. */
+function previewDueDate(lmpDateString) {
+  if (!lmpDateString) return null
+  const parts = lmpDateString.split('-')
+  if (parts.length !== 3) return null
+  const due = new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])))
+  if (Number.isNaN(due.getTime())) return null
+  due.setUTCDate(due.getUTCDate() + 280)
+  return due.toISOString().slice(0, 10)
 }
 
 function formFromPregnancy(pregnancy) {
@@ -106,16 +118,119 @@ function PregnancyPage() {
     }
   }
 
-  if (loading) return <p className="text-slate-600">{t('pregnancy.loadingInfo')}</p>
+  if (loading) return <p className="text-sm text-[var(--text-muted)]">{t('pregnancy.loadingInfo')}</p>
 
-  return <div>
-    <div className="mb-8"><p className="eyebrow">{t('pregnancy.profileEyebrow')}</p><h1 className="page-title">{t('pregnancy.pageTitle')}</h1><p className="mt-3 text-slate-600">{t('pregnancy.subtitle')}</p></div>
-    {error && <StatusMessage>{error}</StatusMessage>}
-    {success && <StatusMessage tone="success">{success}</StatusMessage>}
-    {pregnancies.length === 0 && <section className="content-panel mb-6"><p className="font-semibold text-slate-900">{t('pregnancy.noInfoAdded')}</p><p className="mt-2 text-slate-600">{t('pregnancy.addDescription')}</p></section>}
-    {pregnancies.length > 0 && <section className="mb-6 space-y-4">{pregnancies.map((pregnancy) => <article className="content-panel" key={pregnancy.id}><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="detail-label">{t('pregnancy.status')}</p><p className="font-semibold text-slate-900">{pregnancy.pregnancyStatus}</p></div><button className="button-secondary" onClick={() => startEdit(pregnancy)}>{t('common.edit')}</button></div><div className="mt-5 grid gap-4 text-sm sm:grid-cols-2"><div><span className="detail-label">{t('pregnancy.lmpDate')}</span><span>{dateInputValue(pregnancy.lmpDate) || t('common.notRecorded')}</span></div><div><span className="detail-label">{t('pregnancy.dueDate')}</span><span>{dateInputValue(pregnancy.dueDate) || t('common.notRecorded')}</span></div><div><span className="detail-label">{t('pregnancy.gestationalWeek')}</span><span>{pregnancy.gestationalWeek ?? t('common.notRecorded')}</span></div></div>{pregnancy.notes && <p className="mt-5 text-sm text-slate-600">{t('pregnancy.notesPrefix')} {pregnancy.notes}</p>}</article>)}</section>}
-    <section className="content-panel"><h2 className="section-title">{editingId ? t('pregnancy.editPregnancy') : t('pregnancy.addPregnancy')}</h2><form className="mt-6 space-y-5" onSubmit={submit}><div className="grid gap-5 sm:grid-cols-2"><label className="form-label">{t('pregnancy.status')}<select className="form-input" name="pregnancyStatus" value={form.pregnancyStatus} onChange={updateField}><option value="ACTIVE">{t('pregnancy.active')}</option><option value="COMPLETED">{t('pregnancy.completed')}</option><option value="UNKNOWN">{t('pregnancy.unknown')}</option></select></label><label className="form-label">{t('pregnancy.gestationalWeek')}<input className="form-input" name="gestationalWeek" type="number" value={form.gestationalWeek} onChange={updateField} /></label><label className="form-label">{t('pregnancy.lmpDate')}<input className="form-input" name="lmpDate" type="date" value={form.lmpDate} onChange={updateField} /></label><label className="form-label">{t('pregnancy.dueDate')}<input className="form-input" name="dueDate" type="date" value={form.dueDate} onChange={updateField} /></label></div><label className="form-label">{t('assessment.notes')}<textarea className="form-input" name="notes" rows="4" value={form.notes} onChange={updateField} /></label><div className="flex flex-wrap gap-3"><button className="button-primary" disabled={saving}>{saving ? t('common.saving') : editingId ? t('pregnancy.updatePregnancy') : t('pregnancy.addPregnancyButton')}</button>{editingId && <button className="button-secondary" type="button" onClick={cancelEdit}>{t('common.cancel')}</button>}</div></form></section>
-  </div>
+  return (
+    <div className="space-y-8">
+      <div>
+        <p className="eyebrow">{t('pregnancy.profileEyebrow')}</p>
+        <h1 className="page-title">{t('pregnancy.pageTitle')}</h1>
+        <p className="mt-3 text-[var(--text-secondary)]">{t('pregnancy.subtitle')}</p>
+      </div>
+
+      {error && <StatusMessage>{error}</StatusMessage>}
+      {success && <StatusMessage tone="success">{success}</StatusMessage>}
+
+      {pregnancies.length === 0 && (
+        <div className="empty-state">
+          <div className="empty-state-icon"><BabyIcon size={32} /></div>
+          <p className="font-semibold text-[var(--text-primary)]">{t('pregnancy.noInfoAdded')}</p>
+          <p className="text-sm text-[var(--text-secondary)]">{t('pregnancy.addDescription')}</p>
+        </div>
+      )}
+
+      {/* ── Pregnancy cards ──────────────────────────────── */}
+      {pregnancies.length > 0 && (
+        <div className="space-y-4">
+          {pregnancies.map((pregnancy) => {
+            const gw = pregnancy.gestationalWeek
+            const progress = gw != null ? Math.min(gw / 40 * 100, 100) : null
+
+            return (
+              <article className="content-panel" key={pregnancy.id}>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="detail-label">{t('pregnancy.status')}</p>
+                    <p className="text-lg font-semibold text-[var(--text-primary)]">{pregnancy.pregnancyStatus}</p>
+                  </div>
+                  <button className="button-secondary" onClick={() => startEdit(pregnancy)}>{t('common.edit')}</button>
+                </div>
+
+                {/* Progress bar */}
+                {progress != null && (
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+                      <span>{t('pregnancy.gestationalWeek')}: {gw}</span>
+                      <span>{Math.round(progress)}%</span>
+                    </div>
+                    <div className="cm-progress-bar mt-1">
+                      <div className="cm-progress-fill" style={{ width: `${progress}%` }} />
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-5 grid gap-4 text-sm sm:grid-cols-2">
+                  <div>
+                    <span className="detail-label">{t('pregnancy.lmpDate')}</span>
+                    <span>{dateInputValue(pregnancy.lmpDate) || t('common.notRecorded')}</span>
+                  </div>
+                  <div>
+                    <span className="detail-label">{t('pregnancy.dueDate')}</span>
+                    <span>{dateInputValue(pregnancy.dueDate) || t('common.notRecorded')}</span>
+                  </div>
+                  <div>
+                    <span className="detail-label">{t('pregnancy.gestationalWeek')}</span>
+                    <span>{pregnancy.gestationalWeek ?? t('common.notRecorded')}</span>
+                  </div>
+                </div>
+                {pregnancy.notes && <p className="mt-5 text-sm text-[var(--text-secondary)]">{t('pregnancy.notesPrefix')} {pregnancy.notes}</p>}
+              </article>
+            )
+          })}
+        </div>
+      )}
+
+      {/* ── Add/Edit form ────────────────────────────────── */}
+      <section className="content-panel">
+        <h2 className="section-title">{editingId ? t('pregnancy.editPregnancy') : t('pregnancy.addPregnancy')}</h2>
+        <form className="mt-6 space-y-5" onSubmit={submit}>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <label className="form-label">{t('pregnancy.status')}
+              <select className="form-input" name="pregnancyStatus" value={form.pregnancyStatus} onChange={updateField}>
+                <option value="ACTIVE">{t('pregnancy.active')}</option>
+                <option value="COMPLETED">{t('pregnancy.completed')}</option>
+                <option value="UNKNOWN">{t('pregnancy.unknown')}</option>
+              </select>
+            </label>
+            <label className="form-label">{t('pregnancy.gestationalWeek')}
+              <input className="form-input" name="gestationalWeek" type="number" value={form.gestationalWeek} onChange={updateField} />
+            </label>
+            <label className="form-label">{t('pregnancy.lmpDate')}
+              <input className="form-input" name="lmpDate" type="date" value={form.lmpDate} onChange={updateField} />
+              {form.lmpDate && previewDueDate(form.lmpDate) && (
+                <p className="mt-1.5 rounded-lg bg-[var(--amber-50)] px-3 py-1.5 text-xs font-medium text-[var(--amber-700)]" style={{ border: '1px solid var(--amber-200)' }}>
+                  <span className="block text-[10px] font-normal uppercase tracking-wide text-[var(--amber-600)]">{t('pregnancy.estimatedDueDate')}</span>
+                  {t('pregnancy.dueDatePreview', { date: previewDueDate(form.lmpDate) })}
+                </p>
+              )}
+            </label>
+            <label className="form-label">{t('pregnancy.dueDate')}
+              <input className="form-input" name="dueDate" type="date" value={form.dueDate} onChange={updateField} />
+            </label>
+          </div>
+          <label className="form-label">{t('assessment.notes')}
+            <textarea className="form-input" name="notes" rows="4" value={form.notes} onChange={updateField} />
+          </label>
+          <div className="flex flex-wrap gap-3">
+            <button className="button-primary" disabled={saving}>
+              {saving ? t('common.saving') : editingId ? t('pregnancy.updatePregnancy') : t('pregnancy.addPregnancyButton')}
+            </button>
+            {editingId && <button className="button-secondary" type="button" onClick={cancelEdit}>{t('common.cancel')}</button>}
+          </div>
+        </form>
+      </section>
+    </div>
+  )
 }
 
 export default PregnancyPage

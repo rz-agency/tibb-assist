@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client')
+ const { PrismaClient } = require('@prisma/client')
 const bcrypt = require('bcryptjs')
 
 const prisma = new PrismaClient()
@@ -89,6 +89,41 @@ async function main() {
       code: 'severe_headache',
       name: 'Severe headache',
       category: 'warning_sign',
+      isActive: true,
+    },
+  })
+
+  // --- New labor-related symptoms (added for Feature 2: LMP / gestational-age risk engine) ---
+
+  const symptomContractions = await prisma.symptom.upsert({
+    where: { code: 'contractions' },
+    update: {},
+    create: {
+      code: 'contractions',
+      name: 'Contractions',
+      category: 'labor_sign',
+      isActive: true,
+    },
+  })
+
+  const symptomFluidLeak = await prisma.symptom.upsert({
+    where: { code: 'fluid_leak' },
+    update: {},
+    create: {
+      code: 'fluid_leak',
+      name: 'Fluid leak / water breaking',
+      category: 'labor_sign',
+      isActive: true,
+    },
+  })
+
+  const symptomAbdominalPain = await prisma.symptom.upsert({
+    where: { code: 'severe_abdominal_pain' },
+    update: {},
+    create: {
+      code: 'severe_abdominal_pain',
+      name: 'Severe abdominal pain',
+      category: 'labor_sign',
       isActive: true,
     },
   })

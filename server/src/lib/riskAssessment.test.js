@@ -383,3 +383,95 @@ test('realistic: all 8 symptoms ABSENT → GREEN', () => {
   ])
   assert.deepEqual(r, { riskLevel: 'GREEN', resultCode: 'ALL_CLEAR', isEmergency: false })
 })
+
+// ─── Gestational-age escalation ───────────────────────────────
+
+test('preterm 36w + contractions PRESENT → RED PRETERM_LABOR_RISK', () => {
+  const r = calculateRiskAssessment(
+    [s('contractions', 'PRESENT')],
+    36,
+  )
+  assert.equal(r.riskLevel, 'RED')
+  assert.equal(r.resultCode, 'PRETERM_LABOR_RISK')
+  assert.equal(r.isEmergency, true)
+})
+
+test('exactly 37w + contractions PRESENT → does NOT trigger preterm_labor_risk', () => {
+  const r = calculateRiskAssessment(
+    [s('contractions', 'PRESENT')],
+    37,
+  )
+  // contractions is not in the existing RULES table so base risk is GREEN.
+  assert.notEqual(r.resultCode, 'PRETERM_LABOR_RISK')
+  assert.equal(r.riskLevel, 'GREEN')
+})
+
+test('preterm 36w + fluid_leak PRESENT → RED PRETERM_LABOR_RISK', () => {
+  const r = calculateRiskAssessment(
+    [s('fluid_leak', 'PRESENT')],
+    36,
+  )
+  assert.equal(r.riskLevel, 'RED')
+  assert.equal(r.resultCode, 'PRETERM_LABOR_RISK')
+  assert.equal(r.isEmergency, true)
+})
+
+test('preterm 36w + severe_abdominal_pain PRESENT → RED PRETERM_LABOR_RISK', () => {
+  const r = calculateRiskAssessment(
+    [s('severe_abdominal_pain', 'PRESENT')],
+    36,
+  )
+  assert.equal(r.riskLevel, 'RED')
+  assert.equal(r.resultCode, 'PRETERM_LABOR_RISK')
+})
+
+test('preterm 36w + contractions ABSENT → does NOT trigger preterm_labor_risk', () => {
+  const r = calculateRiskAssessment(
+    [s('contractions', 'ABSENT')],
+    36,
+  )
+  assert.notEqual(r.resultCode, 'PRETERM_LABOR_RISK')
+  assert.equal(r.riskLevel, 'GREEN')
+})
+
+test('postterm 43w + all clear → YELLOW POSTTERM_PREGNANCY', () => {
+  const r = calculateRiskAssessment(
+    [s('heavy_bleeding', 'ABSENT'), s('fever', 'ABSENT')],
+    43,
+  )
+  assert.equal(r.riskLevel, 'YELLOW')
+  assert.equal(r.resultCode, 'POSTTERM_PREGNANCY')
+})
+
+test('postterm 42w (boundary) → does NOT trigger postterm_pregnancy', () => {
+  const r = calculateRiskAssessment(
+    [s('heavy_bleeding', 'ABSENT')],
+    42,
+  )
+  assert.notEqual(r.resultCode, 'POSTTERM_PREGNANCY')
+  assert.equal(r.riskLevel, 'GREEN')
+})
+
+test('postterm 43w + existing RED symptom → stays RED, not downgraded to YELLOW', () => {
+  const r = calculateRiskAssessment(
+    [s('heavy_bleeding', 'PRESENT', 'SEVERE')],
+    43,
+  )
+  assert.equal(r.riskLevel, 'RED')
+  assert.equal(r.resultCode, 'EMERGENCY_WARNING_SIGN')
+})
+
+test('gestationalWeeks null → no escalation, backward-compatible', () => {
+  const r = calculateRiskAssessment(
+    [s('contractions', 'PRESENT')],
+    null,
+  )
+  assert.notEqual(r.resultCode, 'PRETERM_LABOR_RISK')
+  assert.equal(r.riskLevel, 'GREEN') // contractions not in RULES table
+})
+
+test('no gestationalWeeks argument → backward-compatible (defaults to null)', () => {
+  // Calling without the second arg should behave exactly like before.
+  const r = calculateRiskAssessment([s('heavy_bleeding', 'ABSENT')])
+  assert.deepEqual(r, { riskLevel: 'GREEN', resultCode: 'ALL_CLEAR', isEmergency: false })
+})

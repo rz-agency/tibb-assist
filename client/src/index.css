@@ -1,31 +1,65 @@
 @import 'tailwindcss';
+@import './styles/tokens.css';
 
+/* ── Base reset & defaults ─────────────────────────────── */
 :root {
-  font-family: Georgia, 'Times New Roman', serif;
-  line-height: 1.5;
+  font-family: var(--font-body);
+  line-height: var(--leading-normal);
   font-weight: 400;
-  color: #0f172a;
-  background: #fdf2f8;
+  color: var(--text-primary);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
   min-width: 320px;
-  background: #f7f4ee;
+  background: var(--bg-page);
+  font-size: var(--text-base);
 }
 
-* {
-  box-sizing: border-box;
+* { box-sizing: border-box; }
+
+#root { min-height: 100vh; }
+
+/* ── Typography defaults ───────────────────────────────── */
+h1, h2, h3 { font-family: var(--font-display); line-height: var(--leading-tight); }
+
+a { color: var(--teal-700); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Focus ring ────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--teal-500);
+  outline-offset: 2px;
 }
 
-#root {
-  min-height: 100vh;
+/* ── Selection ─────────────────────────────────────────── */
+::selection {
+  background: var(--teal-200);
+  color: var(--teal-900);
+}
+
+/* ── Scrollbar (subtle) ────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: var(--radius-full); }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }

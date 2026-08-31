@@ -182,6 +182,7 @@ model Assessment {
   assessmentDate   DateTime @map("assessment_date")
   inputMethod      AssessmentInputMethod @map("input_method")
   riskLevel        RiskLevel @map("risk_level")
+  resultCode       String?   @map("result_code") @db.VarChar(60)
   triageNotes      String?  @map("triage_notes") @db.Text
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")

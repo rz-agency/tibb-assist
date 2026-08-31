@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { getCareMissions, getPatientProfile, getReferrals, updatePatientProfile } from '../api/api'
 import EmergencyContacts from '../components/EmergencyContacts'
 import StatusMessage from '../components/StatusMessage'
+import { HeartIcon, ShieldIcon, AlertIcon } from '../components/Illustrations'
 
 const RISK_LABEL_KEY = { GREEN: 'assessment.riskGreen', YELLOW: 'assessment.riskYellow', RED: 'assessment.riskRed' }
 
@@ -102,30 +103,128 @@ function Dashboard({ user, onNavigate }) {
     }
   }
 
+  const displayName = profile?.fullName || user.email.split('@')[0]
+  const gaWeek = pregnancy?.gestationalWeeks ?? null
+  const trimester = gaWeek != null ? (gaWeek < 14 ? 1 : gaWeek < 28 ? 2 : 3) : null
+  const remaining = gaWeek != null ? 40 - gaWeek : null
+
   return (
-    <div>
-      <div className="mb-8">
-        <p className="eyebrow">{t('dashboard.yourCareSpace')}</p>
-        <h1 className="page-title">{t('dashboard.goodToSeeYou')}</h1>
-        <p className="mt-3 text-slate-600">{t('dashboard.workspaceDescription')}</p>
+    <div className="space-y-8">
+      {/* ── Hero section ─────────────────────────────────── */}
+      <div className="hero-card flex flex-col-reverse items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex-1">
+          <p className="eyebrow">{t('dashboard.yourCareSpace')}</p>
+          <h1 className="page-title" style={{ color: 'var(--teal-900)' }}>
+            {t('dashboard.greetingName', { defaultValue: `Hello, ${displayName}`, name: displayName })}
+          </h1>
+          <p className="mt-2 text-[var(--text-secondary)]">{t('dashboard.workspaceDescription')}</p>
+          {gaWeek != null && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="ga-pill ga-pill-week">{t('dashboard.currentWeek', { currentWeek: gaWeek })}</span>
+              <span className="ga-pill ga-pill-tri">{t('dashboard.trimester', { trimester })}</span>
+              {remaining > 0
+                ? <span className="ga-pill ga-pill-remain">{t('dashboard.weeksRemaining', { weeks: remaining })}</span>
+                : <span className="ga-pill ga-pill-overdue">{t('dashboard.overdue')}</span>}
+              {pregnancy.isPostterm && <span className="ga-pill ga-pill-postterm">{t('dashboard.posttermAlert')}</span>}
+            </div>
+          )}
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button className="button-primary" onClick={() => onNavigate('assessment')}>
+              {t('dashboard.startAssessment')}
+            </button>
+            <button className="button-secondary" onClick={() => onNavigate('pregnancy')}>
+              {pregnancy ? t('dashboard.viewPregnancy') : t('dashboard.addPregnancy')}
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* ── Profile strip ────────────────────────────────── */}
       <section className="profile-strip">
-        <div><p className="text-sm text-slate-500">{t('dashboard.signedInAs')}</p><p className="font-semibold text-slate-900">{user.email}</p></div>
+        <div>
+          <p className="text-xs text-[var(--text-muted)]">{t('dashboard.signedInAs')}</p>
+          <p className="font-semibold text-[var(--text-primary)]">{user.email}</p>
+        </div>
         <span className="role-badge">{user.role}</span>
       </section>
-      <section className="content-panel mt-6"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="eyebrow">{t('dashboard.pregnancyEyebrow')}</p>{pregnancyLoading && <p className="text-slate-600">{t('dashboard.loadingPregnancy')}</p>}{!pregnancyLoading && !pregnancyError && pregnancy && <><p className="font-semibold text-slate-900">{t(pregnancyStatusKey[pregnancy.pregnancyStatus] || 'dashboard.activePregnancy')}</p>{pregnancy.gestationalWeek !== null && <p className="mt-1 text-sm text-slate-600">{t('dashboard.weeksGestation', { weeks: pregnancy.gestationalWeek })}</p>}{pregnancy.dueDate && <p className="mt-1 text-sm text-slate-600">{t('dashboard.dueDate', { date: pregnancy.dueDate.slice(0, 10) })}</p>}</>}{!pregnancyLoading && !pregnancyError && !pregnancy && <p className="text-slate-600">{t('dashboard.noPregnancyInfo')}</p>}{pregnancyError && <StatusMessage>{pregnancyError}</StatusMessage>}</div><button className="button-secondary" onClick={() => onNavigate('pregnancy')}>{pregnancy ? t('dashboard.viewPregnancy') : t('dashboard.addPregnancy')}</button></div></section>
-      <section className="content-panel mt-6">
+
+      {/* ── Pregnancy summary (compact card when hero has data) ── */}
+      {pregnancyLoading && <p className="text-sm text-[var(--text-muted)]">{t('dashboard.loadingPregnancy')}</p>}
+      {pregnancyError && <StatusMessage>{pregnancyError}</StatusMessage>}
+      {!pregnancyLoading && !pregnancyError && pregnancy && (
+        <div className="tinted-card">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="eyebrow">{t('dashboard.pregnancyEyebrow')}</p>
+              <p className="font-semibold text-[var(--text-primary)]">{t(pregnancyStatusKey[pregnancy.pregnancyStatus] || 'dashboard.activePregnancy')}</p>
+              {gaWeek != null && (
+                <div className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+                  {pregnancy.lmpDate && <><span className="detail-label">{t('dashboard.lmpStart')}</span><span>{pregnancy.lmpDate.slice(0, 10)}</span></>}
+                  {pregnancy.dueDate && <><span className="detail-label">{t('dashboard.dueEnd')}</span><span>{pregnancy.dueDate.slice(0, 10)}</span></>}
+                </div>
+              )}
+              {gaWeek == null && (
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                  {t('dashboard.enterLmpPrompt')}{' '}
+                  <button className="link-button" onClick={() => onNavigate('pregnancy')}>{t('dashboard.enterLmpLink')}</button>
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {!pregnancyLoading && !pregnancyError && !pregnancy && (
+        <div className="empty-state">
+          <div className="empty-state-icon"><HeartIcon size={28} /></div>
+          <p className="text-sm text-[var(--text-secondary)]">{t('dashboard.noPregnancyInfo')}</p>
+          <button className="button-secondary" onClick={() => onNavigate('pregnancy')}>{t('dashboard.addPregnancy')}</button>
+        </div>
+      )}
+
+      {/* ── Today: Action cards grid ─────────────────────── */}
+      <div>
+        <p className="eyebrow">{t('dashboard.todayActions', { defaultValue: 'Today' })}</p>
+        <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <button className="action-card" onClick={() => onNavigate('assessment')}>
+            <span className="action-icon" style={{ background: 'var(--teal-50)', color: 'var(--teal-700)' }}><ShieldIcon size={20} /></span>
+            <strong>{t('dashboard.startAssessment')}</strong>
+            <span className="text-sm">{t('dashboard.recordSymptoms')}</span>
+          </button>
+          <button className="action-card" onClick={() => onNavigate('history')}>
+            <span className="action-icon" style={{ background: 'var(--lavender-50)', color: 'var(--lavender-500)' }}>=</span>
+            <strong>{t('dashboard.assessmentHistory')}</strong>
+            <span className="text-sm">{t('dashboard.reviewRecords')}</span>
+          </button>
+          <button className="action-card" onClick={() => onNavigate('pregnancy')}>
+            <span className="action-icon" style={{ background: 'var(--coral-50)', color: 'var(--coral-500)' }}><HeartIcon size={20} /></span>
+            <strong>{t('dashboard.pregnancyCardTitle')}</strong>
+            <span className="text-sm">{t('dashboard.pregnancyCardDescription')}</span>
+          </button>
+          <button className="action-card" onClick={() => onNavigate('nearby')}>
+            <span className="action-icon" style={{ background: 'var(--amber-50)', color: 'var(--amber-600)' }}>&#9956;</span>
+            <strong>{t('dashboard.nearbyCardTitle')}</strong>
+            <span className="text-sm">{t('dashboard.nearbyCardDescription')}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── Profile section ──────────────────────────────── */}
+      <section className="content-panel">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div><p className="eyebrow">{t('dashboard.yourProfile')}</p>
-            {profile && !profileEditing && <><p className="font-semibold text-slate-900">{profile.fullName}</p>
-              <div className="mt-2 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
-                {profile.phone && <><span className="detail-label">{t('dashboard.phoneLabel')}</span><span>{profile.phone}</span></>}
-                {profile.age && <><span className="detail-label">{t('dashboard.ageLabel')}</span><span>{profile.age}</span></>}
-                {profile.villageOrArea && <><span className="detail-label">{t('dashboard.areaLabel')}</span><span>{profile.villageOrArea}</span></>}
-                {profile.district && <><span className="detail-label">{t('dashboard.districtLabel')}</span><span>{profile.district}</span></>}
-                {profile.province && <><span className="detail-label">{t('dashboard.provinceLabel')}</span><span>{profile.province}</span></>}
-              </div>
-            </>}
+          <div>
+            <p className="eyebrow">{t('dashboard.yourProfile')}</p>
+            {profile && !profileEditing && (
+              <>
+                <p className="mt-1 text-lg font-semibold text-[var(--text-primary)]">{profile.fullName}</p>
+                <div className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+                  {profile.phone && <><span className="detail-label">{t('dashboard.phoneLabel')}</span><span>{profile.phone}</span></>}
+                  {profile.age && <><span className="detail-label">{t('dashboard.ageLabel')}</span><span>{profile.age}</span></>}
+                  {profile.villageOrArea && <><span className="detail-label">{t('dashboard.areaLabel')}</span><span>{profile.villageOrArea}</span></>}
+                  {profile.district && <><span className="detail-label">{t('dashboard.districtLabel')}</span><span>{profile.district}</span></>}
+                  {profile.province && <><span className="detail-label">{t('dashboard.provinceLabel')}</span><span>{profile.province}</span></>}
+                </div>
+              </>
+            )}
           </div>
           {!profileEditing && <button className="button-secondary" onClick={startProfileEdit}>{t('common.editProfile')}</button>}
         </div>
@@ -148,16 +247,25 @@ function Dashboard({ user, onNavigate }) {
           </form>
         )}
       </section>
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
-        <button className="action-card" onClick={() => onNavigate('assessment')}><span className="action-icon">+</span><strong>{t('dashboard.startAssessment')}</strong><span>{t('dashboard.recordSymptoms')}</span></button>
-        <button className="action-card" onClick={() => onNavigate('history')}><span className="action-icon">≡</span><strong>{t('dashboard.assessmentHistory')}</strong><span>{t('dashboard.reviewRecords')}</span></button>
-        <button className="action-card" onClick={() => onNavigate('pregnancy')}><span className="action-icon">♡</span><strong>{t('dashboard.pregnancyCardTitle')}</strong><span>{t('dashboard.pregnancyCardDescription')}</span></button>
-      </div>
-      <section className="mt-8">
-        <p className="eyebrow">{t('careMission.pageTitle')}</p>
-        {careMissionsLoading && <p className="mt-3 text-slate-600">{t('careMission.loading')}</p>}
+
+      {/* ── Care missions ─────────────────────────────────── */}
+      <section>
+        <div className="flex items-center justify-between">
+          <p className="eyebrow mb-0">{t('careMission.pageTitle')}</p>
+          {careMissions.length > 0 && (
+            <button className="link-button text-xs" onClick={() => onNavigate('care-missions')}>
+              {t('dashboard.viewAll', { defaultValue: 'View all' })}
+            </button>
+          )}
+        </div>
+        {careMissionsLoading && <p className="mt-3 text-sm text-[var(--text-muted)]">{t('careMission.loading')}</p>}
         {careMissionsError && <StatusMessage>{careMissionsError}</StatusMessage>}
-        {!careMissionsLoading && !careMissionsError && careMissions.length === 0 && <p className="mt-3 text-slate-600">{t('careMission.noMissions')}</p>}
+        {!careMissionsLoading && !careMissionsError && careMissions.length === 0 && (
+          <div className="mt-3 empty-state">
+            <div className="empty-state-icon"><ShieldIcon size={24} /></div>
+            <p className="text-sm text-[var(--text-muted)]">{t('careMission.noMissions')}</p>
+          </div>
+        )}
         {!careMissionsLoading && careMissions.length > 0 && (
           <div className="mt-3 space-y-3">
             {careMissions.map((mission) => {
@@ -166,10 +274,10 @@ function Dashboard({ user, onNavigate }) {
                 <button className={`cm-mission-card cm-mission-${risk}`} key={mission.id} onClick={() => onNavigate('care-missions')}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <span className={`risk-${risk}`}>{t(RISK_LABEL_KEY[mission.riskLevel])}</span>
-                      <p className="mt-1 text-sm text-slate-500">{new Date(mission.createdAt).toLocaleString()}</p>
+                      <span className={`risk-badge risk-${risk}`}>{t(RISK_LABEL_KEY[mission.riskLevel])}</span>
+                      <p className="mt-1 text-xs text-[var(--text-muted)]">{new Date(mission.createdAt).toLocaleString()}</p>
                     </div>
-                    <span className={`status-badge status-${mission.status.toLowerCase() === 'open' ? 'recommended' : mission.status.toLowerCase() === 'completed' ? 'completed' : 'contacted'}`}>
+                    <span className={`status-badge status-${mission.status.toLowerCase() === 'open' ? 'recommended' : mission.status.toLowerCase() === 'completed' ? 'closed' : 'contacted'}`}>
                       {mission.status.replace('_', ' ')}
                     </span>
                   </div>
@@ -179,13 +287,38 @@ function Dashboard({ user, onNavigate }) {
           </div>
         )}
       </section>
-      <section className="mt-8">
-        <p className="eyebrow">{t('dashboard.referralsEyebrow')}</p>
-        {referralsLoading && <p className="mt-3 text-slate-600">{t('dashboard.loadingReferrals')}</p>}
+
+      {/* ── Referrals ─────────────────────────────────────── */}
+      <section>
+        <div className="flex items-center justify-between">
+          <p className="eyebrow mb-0">{t('dashboard.referralsEyebrow')}</p>
+          {referrals.length > 0 && (
+            <button className="link-button text-xs" onClick={() => onNavigate('referrals')}>
+              {t('dashboard.viewAll', { defaultValue: 'View all' })}
+            </button>
+          )}
+        </div>
+        {referralsLoading && <p className="mt-3 text-sm text-[var(--text-muted)]">{t('dashboard.loadingReferrals')}</p>}
         {referralsError && <StatusMessage>{referralsError}</StatusMessage>}
-        {!referralsLoading && !referralsError && referrals.length === 0 && <p className="mt-3 text-slate-600">{t('dashboard.noReferrals')}</p>}
-        {!referralsLoading && referrals.length > 0 && <div className="mt-3 space-y-3">{referrals.map((referral) => <button className="history-item w-full cursor-pointer text-left" key={referral.id} onClick={() => onNavigate('referrals')}><span><strong>{referral.facility.name}</strong><small>{referral.facility.facilityType.replace('_', ' ')}{referral.facility.city ? ` · ${referral.facility.city}` : ''}</small><small>{t('dashboard.assessmentDate', { date: new Date(referral.assessment.assessmentDate).toLocaleDateString() })} · <span className={`risk-${referral.assessment.riskLevel.toLowerCase()}`}>{t(RISK_LABEL_KEY[referral.assessment.riskLevel])}</span></small></span><span className={`status-badge status-${referral.status.toLowerCase()}`}>{referral.status}</span></button>)}</div>}
+        {!referralsLoading && !referralsError && referrals.length === 0 && (
+          <p className="mt-3 text-sm text-[var(--text-muted)]">{t('dashboard.noReferrals')}</p>
+        )}
+        {!referralsLoading && referrals.length > 0 && (
+          <div className="mt-3 space-y-3">
+            {referrals.map((referral) => (
+              <button className="history-item w-full cursor-pointer text-start" key={referral.id} onClick={() => onNavigate('referrals')}>
+                <span>
+                  <strong className="text-[var(--text-primary)]">{referral.facility.name}</strong>
+                  <small className="block">{referral.facility.facilityType.replace('_', ' ')}{referral.facility.city ? ` \u00B7 ${referral.facility.city}` : ''}</small>
+                  <small>{t('dashboard.assessmentDate', { date: new Date(referral.assessment.assessmentDate).toLocaleDateString() })} &middot; <span className={`risk-badge risk-${referral.assessment.riskLevel.toLowerCase()}`}>{t(RISK_LABEL_KEY[referral.assessment.riskLevel])}</span></small>
+                </span>
+                <span className={`status-badge status-${referral.status.toLowerCase()}`}>{referral.status}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </section>
+
       {patientId && <EmergencyContacts patientId={patientId} />}
     </div>
   )

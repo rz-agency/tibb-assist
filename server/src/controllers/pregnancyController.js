@@ -1,4 +1,5 @@
 const prisma = require('../lib/prisma')
+const { calculateDueDate, getGestationalWeeks, isPostterm } = require('../lib/gestationalAge')
 
 const pregnancyStatuses = ['ACTIVE', 'COMPLETED', 'UNKNOWN']
 
@@ -40,10 +41,16 @@ function getPregnancyData(body) {
   if (typeof body.pregnancyStatus !== 'string' || !pregnancyStatuses.includes(body.pregnancyStatus)) return null
   if (body.notes !== undefined && body.notes !== null && typeof body.notes !== 'string') return null
 
+  // Naegele's rule: if lmpDate is provided but dueDate was not explicitly set,
+  // calculate dueDate = lmpDate + 280 days.
+  const effectiveDueDate = (dueDate === null && lmpDate instanceof Date)
+    ? calculateDueDate(lmpDate)
+    : dueDate
+
   return {
     pregnancyStatus: body.pregnancyStatus,
     lmpDate,
-    dueDate,
+    dueDate: effectiveDueDate,
     gestationalWeek,
     notes: body.notes ?? null,
   }
@@ -62,6 +69,19 @@ async function getWomanPatient(userId) {
   })
 }
 
+/**
+ * Decorate a pregnancy record with computed gestational-age fields.
+ * Returns a new object (does not mutate the original).
+ */
+function decoratePregnancy(pregnancy) {
+  const gestationalWeeks = getGestationalWeeks(pregnancy.lmpDate)
+  return {
+    ...pregnancy,
+    gestationalWeeks,
+    isPostterm: gestationalWeeks != null ? isPostterm(gestationalWeeks) : null,
+  }
+}
+
 async function listPregnancies(req, res) {
   try {
     const patient = await getWomanPatient(req.user.id)
@@ -73,7 +93,7 @@ async function listPregnancies(req, res) {
       orderBy: { createdAt: 'desc' },
     })
 
-    return res.json({ pregnancies })
+    return res.json({ pregnancies: pregnancies.map(decoratePregnancy) })
   } catch (error) {
     return handleDatabaseError(error, res)
   }
@@ -92,7 +112,7 @@ async function createPregnancy(req, res) {
       select: pregnancySelect,
     })
 
-    return res.status(201).json({ pregnancy })
+    return res.status(201).json({ pregnancy: decoratePregnancy(pregnancy) })
   } catch (error) {
     return handleDatabaseError(error, res)
   }
@@ -121,7 +141,7 @@ async function updatePregnancy(req, res) {
       select: pregnancySelect,
     })
 
-    return res.json({ pregnancy: updatedPregnancy })
+    return res.json({ pregnancy: decoratePregnancy(updatedPregnancy) })
   } catch (error) {
     return handleDatabaseError(error, res)
   }

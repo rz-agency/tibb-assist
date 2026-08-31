@@ -82,7 +82,7 @@ function CareMissionPage({ user }) {
   const totalCount = selectedMission?.checklistItems.length ?? 0
 
   if (loading) {
-    return <section className="content-panel"><p className="text-slate-600">{t('careMission.loading')}</p></section>
+    return <section className="content-panel"><p className="text-sm text-[var(--text-muted)]">{t('careMission.loading')}</p></section>
   }
 
   if (error && missions.length === 0 && !selectedMission) {
@@ -104,7 +104,7 @@ function CareMissionPage({ user }) {
           ← {t('careMission.backToList')}
         </button>
         {error && <StatusMessage>{error}</StatusMessage>}
-        {detailLoading && <p className="text-slate-600">{t('careMission.loadingDetail')}</p>}
+        {detailLoading && <p className="text-sm text-[var(--text-muted)]">{t('careMission.loadingDetail')}</p>}
 
         <section className="content-panel">
           {/* Header — risk + status */}
@@ -128,16 +128,16 @@ function CareMissionPage({ user }) {
           {user.role === 'LHW' && selectedMission.assessment?.patient && (
             <div className="mt-4">
               <span className="detail-label">{t('careMission.patient')}</span>
-              <p className="font-semibold text-slate-900">{selectedMission.assessment.patient.fullName}</p>
+              <p className="font-semibold text-[var(--text-primary)]">{selectedMission.assessment.patient.fullName}</p>
               {selectedMission.assessment.patient.phone && (
-                <p className="text-sm text-slate-500">{selectedMission.assessment.patient.phone}</p>
+                <p className="text-sm text-[var(--text-muted)]">{selectedMission.assessment.patient.phone}</p>
               )}
             </div>
           )}
 
           {/* Assessment summary */}
           <div className="mt-6">
-            <h2 className="font-semibold text-slate-900">{t('careMission.assessmentSummary')}</h2>
+            <h2 className="font-semibold text-[var(--text-primary)]">{t('careMission.assessmentSummary')}</h2>
             <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
               <div>
                 <span className="detail-label">{t('careMission.assessmentDate')}</span>
@@ -151,16 +151,16 @@ function CareMissionPage({ user }) {
               )}
             </div>
             {selectedMission.assessment.triageNotes && (
-              <p className="mt-3 text-sm text-slate-600">{t('careMission.triageNotes')} {selectedMission.assessment.triageNotes}</p>
+              <p className="mt-3 text-sm text-[var(--text-secondary)]">{t('careMission.triageNotes')} {selectedMission.assessment.triageNotes}</p>
             )}
             {selectedMission.assessment.assessmentSymptoms?.length > 0 && (
               <ul className="mt-3 space-y-1">
                 {selectedMission.assessment.assessmentSymptoms
                   .filter((s) => s.answerStatus !== 'UNKNOWN')
                   .map((item, i) => (
-                    <li className="rounded-lg bg-slate-50 px-3 py-2 text-sm" key={i}>
-                      <span className="font-medium">{cleanSymptomLabel(item.symptom.name)}</span>
-                      <span className="ms-2 text-slate-500">
+                    <li className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-subtle)] px-3 py-2 text-sm" key={i}>
+                      <span className="font-medium text-[var(--text-primary)]">{cleanSymptomLabel(item.symptom.name)}</span>
+                      <span className="ms-2 text-[var(--text-muted)]">
                         {item.answerStatus}{item.severity ? ` · ${item.severity}` : ''}
                       </span>
                     </li>
@@ -172,8 +172,8 @@ function CareMissionPage({ user }) {
           {/* Checklist */}
           <div className="mt-6">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-900">{t('careMission.checklistTitle')}</h2>
-              <span className="text-sm text-slate-500">{completedCount}/{totalCount}</span>
+              <h2 className="font-semibold text-[var(--text-primary)]">{t('careMission.checklistTitle')}</h2>
+              <span className="text-sm text-[var(--text-muted)]">{completedCount}/{totalCount}</span>
             </div>
             <div className="cm-progress-bar"><div className="cm-progress-fill" style={{ width: `${totalCount > 0 ? (completedCount / totalCount) * 100 : 0}%` }} /></div>
             <ul className="mt-3 space-y-2">
@@ -198,7 +198,7 @@ function CareMissionPage({ user }) {
           {/* Timeline */}
           {selectedMission.timelineEntries?.length > 0 && (
             <div className="mt-6">
-              <h2 className="font-semibold text-slate-900">{t('careMission.timelineTitle')}</h2>
+              <h2 className="font-semibold text-[var(--text-primary)]">{t('careMission.timelineTitle')}</h2>
               <div className="cm-timeline">
                 {selectedMission.timelineEntries.map((entry, index) => (
                   <div className="cm-timeline-entry" key={entry.id}>
@@ -216,13 +216,13 @@ function CareMissionPage({ user }) {
 
           {/* Referral */}
           <div className="mt-6">
-            <h2 className="font-semibold text-slate-900">{t('careMission.referralSection')}</h2>
+            <h2 className="font-semibold text-[var(--text-primary)]">{t('careMission.referralSection')}</h2>
             {selectedMission.referral ? (
               <div className="cm-info-card">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="font-semibold text-slate-900">{selectedMission.referral.facility?.name}</p>
-                    <p className="text-sm text-slate-500">
+                    <p className="font-semibold text-[var(--text-primary)]">{selectedMission.referral.facility?.name}</p>
+                    <p className="text-sm text-[var(--text-muted)]">
                       {selectedMission.referral.facility?.facilityType?.replace('_', ' ')}
                       {selectedMission.referral.facility?.city ? ` · ${selectedMission.referral.facility.city}` : ''}
                     </p>
@@ -232,28 +232,28 @@ function CareMissionPage({ user }) {
                   </span>
                 </div>
                 {selectedMission.referral.notes && (
-                  <p className="mt-2 text-sm text-slate-600">{selectedMission.referral.notes}</p>
+                  <p className="mt-2 text-sm text-[var(--text-secondary)]">{selectedMission.referral.notes}</p>
                 )}
-                <p className="mt-2 text-xs text-slate-500">
+                <p className="mt-2 text-xs text-[var(--text-muted)]">
                   {t('careMission.referralDate')} {new Date(selectedMission.referral.referralDate).toLocaleDateString()}
                 </p>
                 {selectedMission.referral.facility?.phone && (
-                  <p className="mt-1 text-sm text-slate-600">{t('careMission.phone')} {selectedMission.referral.facility.phone}</p>
+                  <p className="mt-1 text-sm text-[var(--text-secondary)]">{t('careMission.phone')} {selectedMission.referral.facility.phone}</p>
                 )}
               </div>
             ) : (
-              <p className="mt-2 text-sm text-slate-500">{t('careMission.noReferral')}</p>
+              <p className="mt-2 text-sm text-[var(--text-muted)]">{t('careMission.noReferral')}</p>
             )}
           </div>
 
           {/* Assigned LHW */}
           {selectedMission.assignedLhw && (
             <div className="mt-6">
-              <h2 className="font-semibold text-slate-900">{t('careMission.assignedLhw')}</h2>
+              <h2 className="font-semibold text-[var(--text-primary)]">{t('careMission.assignedLhw')}</h2>
               <div className="cm-info-card">
-                <p className="font-semibold text-slate-900">{selectedMission.assignedLhw.fullName}</p>
+                <p className="font-semibold text-[var(--text-primary)]">{selectedMission.assignedLhw.fullName}</p>
                 {selectedMission.assignedLhw.phone && (
-                  <p className="text-sm text-slate-600">{t('careMission.phone')} {selectedMission.assignedLhw.phone}</p>
+                  <p className="text-sm text-[var(--text-secondary)]">{t('careMission.phone')} {selectedMission.assignedLhw.phone}</p>
                 )}
               </div>
             </div>
@@ -270,12 +270,12 @@ function CareMissionPage({ user }) {
       <div className="mb-8">
         <p className="eyebrow">{t('careMission.pageTitle')}</p>
         <h1 className="page-title">{t('careMission.pageTitle')}</h1>
-        <p className="mt-3 text-slate-600">{t('careMission.subtitle')}</p>
+        <p className="mt-3 text-[var(--text-secondary)]">{t('careMission.subtitle')}</p>
       </div>
       {error && <StatusMessage>{error}</StatusMessage>}
       {missions.length === 0 && !error && (
         <section className="content-panel">
-          <p className="text-slate-600">{t('careMission.noMissions')}</p>
+          <p className="text-[var(--text-secondary)]">{t('careMission.noMissions')}</p>
         </section>
       )}
       {missions.length > 0 && (
@@ -286,13 +286,13 @@ function CareMissionPage({ user }) {
               <button className={`cm-mission-card cm-mission-${risk}`} key={mission.id} onClick={() => openMission(mission.id)}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <span className={`risk-${risk}`}>{t(RISK_LABEL_KEY[mission.riskLevel])}</span>
-                    <p className="mt-1 font-semibold text-slate-900">
+                    <span className={`risk-badge risk-${risk}`}>{t(RISK_LABEL_KEY[mission.riskLevel])}</span>
+                    <p className="mt-1 font-semibold text-[var(--text-primary)]">
                       {user.role === 'LHW' && mission.assessment?.patient
                         ? mission.assessment.patient.fullName
                         : t('careMission.pageTitle')}
                     </p>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-[var(--text-muted)]">
                       {new Date(mission.createdAt).toLocaleString()}
                     </p>
                   </div>

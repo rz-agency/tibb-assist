@@ -27,22 +27,42 @@ function Register({ onLogin, onShowLogin }) {
 
   return (
     <main className="auth-shell">
-      <section className="auth-panel">
-        <div className="mb-8">
-          <p className="eyebrow">{t('auth.startSimply')}</p>
-          <h1 className="page-title">{t('auth.createYourAccount')}</h1>
-          <p className="mt-3 text-slate-600">{t('auth.registerSubtitle')}</p>
-        </div>
-        <form className="space-y-5" onSubmit={submit}>
-          {form.role === 'WOMAN' && <label className="form-label">{t('auth.fullName')}<input className="form-input" name="fullName" type="text" value={form.fullName} onChange={updateField} required /></label>}
-          <label className="form-label">{t('auth.email')}<input className="form-input" name="email" type="email" value={form.email} onChange={updateField} required /></label>
-          <label className="form-label">{t('auth.password')}<input className="form-input" name="password" type="password" minLength="8" value={form.password} onChange={updateField} required /></label>
-          <label className="form-label">{t('auth.accountType')}<select className="form-input" name="role" value={form.role} onChange={updateField}><option value="WOMAN">{t('auth.woman')}</option><option value="LHW">{t('auth.ladyHealthWorker')}</option></select></label>
-          {error && <StatusMessage>{error}</StatusMessage>}
-          <button className="button-primary w-full" disabled={loading}>{loading ? t('auth.creatingAccount') : t('auth.createAccount')}</button>
-        </form>
-        <p className="mt-6 text-center text-sm text-slate-600">{t('auth.alreadyRegistered')} <button className="link-button" onClick={onShowLogin}>{t('auth.signIn')}</button></p>
-      </section>
+      <div className="relative z-10 mx-auto w-full max-w-md">
+        <section className="auth-panel">
+          <div className="mb-8">
+            <p className="eyebrow">{t('auth.startSimply')}</p>
+            <h1 className="page-title">{t('auth.createYourAccount')}</h1>
+            <p className="mt-3 text-[var(--text-secondary)]">{t('auth.registerSubtitle')}</p>
+          </div>
+          <form className="space-y-5" onSubmit={submit}>
+            {form.role === 'WOMAN' && (
+              <label className="form-label">{t('auth.fullName')}
+                <input className="form-input" name="fullName" type="text" value={form.fullName} onChange={updateField} required />
+              </label>
+            )}
+            <label className="form-label">{t('auth.email')}
+              <input className="form-input" name="email" type="email" value={form.email} onChange={updateField} required />
+            </label>
+            <label className="form-label">{t('auth.password')}
+              <input className="form-input" name="password" type="password" minLength="8" value={form.password} onChange={updateField} required />
+            </label>
+            <label className="form-label">{t('auth.accountType')}
+              <select className="form-input" name="role" value={form.role} onChange={updateField}>
+                <option value="WOMAN">{t('auth.woman')}</option>
+                <option value="LHW">{t('auth.ladyHealthWorker')}</option>
+              </select>
+            </label>
+            {error && <StatusMessage>{error}</StatusMessage>}
+            <button className="button-primary w-full" disabled={loading}>
+              {loading ? t('auth.creatingAccount') : t('auth.createAccount')}
+            </button>
+          </form>
+          <p className="mt-6 text-center text-sm text-[var(--text-secondary)]">
+            {t('auth.alreadyRegistered')}{' '}
+            <button className="link-button" onClick={onShowLogin}>{t('auth.signIn')}</button>
+          </p>
+        </section>
+      </div>
     </main>
   )
 }

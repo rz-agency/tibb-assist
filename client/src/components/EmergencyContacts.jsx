@@ -106,17 +106,17 @@ function EmergencyContacts({ patientId }) {
         <p className="eyebrow">{t('emergency.eyebrow')}</p>
         {!showForm && !loading && <button className="button-secondary" onClick={startAdd}>{t('emergency.addContact')}</button>}
       </div>
-      {loading && <p className="mt-3 text-slate-600">{t('emergency.loading')}</p>}
+      {loading && <p className="mt-3 text-sm text-[var(--text-muted)]">{t('emergency.loading')}</p>}
       {error && <StatusMessage>{error}</StatusMessage>}
       {success && <StatusMessage tone="success">{success}</StatusMessage>}
-      {!loading && contacts.length === 0 && !showForm && <p className="mt-3 text-slate-600">{t('emergency.noContacts')}</p>}
+      {!loading && contacts.length === 0 && !showForm && <p className="mt-3 text-sm text-[var(--text-muted)]">{t('emergency.noContacts')}</p>}
       {!loading && contacts.length > 0 && <div className="mt-3 space-y-3">{contacts.map((contact) => (
         <div className="content-panel" key={contact.id}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="font-semibold text-slate-900">{contact.name}{contact.isPrimary && <span className="ml-2 inline-block rounded-full bg-teal-100 px-2 py-0.5 text-xs font-bold text-teal-800">{t('emergency.primary')}</span>}</p>
-              <p className="mt-1 text-sm text-slate-600">{contact.relationship}</p>
-              <p className="mt-1 text-sm text-slate-700">{contact.phoneNumber}</p>
+              <p className="font-semibold text-[var(--text-primary)]">{contact.name}{contact.isPrimary && <span className="ms-2 inline-block rounded-full bg-[var(--teal-100)] px-2 py-0.5 text-xs font-bold text-[var(--teal-700)]">{t('emergency.primary')}</span>}</p>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">{contact.relationship}</p>
+              <p className="mt-1 text-sm text-[var(--text-primary)]">{contact.phoneNumber}</p>
             </div>
             <div className="flex gap-2">
               <button className="button-secondary" onClick={() => startEdit(contact)}>{t('common.edit')}</button>
@@ -135,7 +135,7 @@ function EmergencyContacts({ patientId }) {
               <label className="form-label">{t('emergency.name')}<input className="form-input" name="name" value={form.name} onChange={updateField} required /></label>
               <label className="form-label">{t('emergency.relationship')}<input className="form-input" name="relationship" value={form.relationship} onChange={updateField} placeholder={t('emergency.relationshipPlaceholder')} required /></label>
               <label className="form-label">{t('emergency.phoneNumber')}<input className="form-input" name="phoneNumber" value={form.phoneNumber} onChange={updateField} placeholder={t('emergency.phonePlaceholder')} required /></label>
-              <label className="form-label mt-auto"><label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" name="isPrimary" checked={form.isPrimary} onChange={updateField} className="h-4 w-4" />{t('emergency.setAsPrimary')}</label></label>
+              <label className="form-label mt-auto"><label className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]"><input type="checkbox" name="isPrimary" checked={form.isPrimary} onChange={updateField} className="h-4 w-4" />{t('emergency.setAsPrimary')}</label></label>
             </div>
             <div className="flex flex-wrap gap-3">
               <button className="button-primary" disabled={saving}>{saving ? t('common.saving') : editingId ? t('emergency.updateContact') : t('emergency.addContact')}</button>

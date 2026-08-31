@@ -32,6 +32,7 @@
     "navAiAssistant": "AI Assistant",
     "navCareMissions": "Care Missions",
         "navReferrals": "Referrals",
+    "navNearby": "Nearby help",
     "checkingSession": "Checking your session..."
   },
   "common": {
@@ -96,7 +97,14 @@
     "notedSymptoms": "Also reported (not included in risk calculation)",
     "notedDisclaimer": "These symptoms were noted by the AI for reference but were not scored by the risk engine.",
     "backToDashboard": "Back to Dashboard",
-    "viewAssessmentHistory": "View Assessment History"
+    "viewAssessmentHistory": "View Assessment History",
+    "pretermLaborRiskExplanation": "You are under 37 weeks and have signs of early labour (contractions, fluid leak, or severe abdominal pain). This could mean preterm delivery.",
+    "pretermLaborRiskAction": "Go to the nearest hospital or call your doctor immediately. Do not wait.",
+    "posttermPregnancyExplanation": "Your pregnancy is past 42 weeks. Overdue pregnancies carry higher risk for you and the baby.",
+    "posttermPregnancyAction": "Please contact your doctor or midwife as soon as possible to discuss next steps.",
+    "stepSymptoms": "Symptoms",
+    "stepReview": "Review",
+    "stepResult": "Result"
   },
   "history": {
     "backToHistory": "← Back to history",
@@ -140,7 +148,9 @@
     "updatePregnancy": "Update pregnancy",
     "addPregnancyButton": "Add Pregnancy",
     "infoUpdated": "Pregnancy information updated.",
-    "infoAdded": "Pregnancy information added."
+    "infoAdded": "Pregnancy information added.",
+    "estimatedDueDate": "Estimated due date (LMP + 280 days)",
+    "dueDatePreview": "Due: {{date}}"
   },
   "emergency": {
     "eyebrow": "Emergency contacts",
@@ -210,7 +220,42 @@
     "referralsEyebrow": "Referrals",
     "loadingReferrals": "Loading referrals...",
     "noReferrals": "No referrals created yet.",
-    "assessmentDate": "Assessment: {{date}}"
+    "assessmentDate": "Assessment: {{date}}",
+    "nearbyCardTitle": "Nearby help",
+    "nearbyCardDescription": "Find hospitals, pharmacies, and clinics near you",
+    "currentWeek": "Week {{currentWeek}} of 40",
+    "trimester": "Trimester {{trimester}}",
+    "weeksRemaining": "{{weeks}} weeks to due date",
+    "overdue": "Past due date",
+    "posttermAlert": "This pregnancy is past 42 weeks. Please contact a healthcare provider.",
+    "lmpStart": "LMP (start)",
+    "dueEnd": "Due (end)",
+    "enterLmpPrompt": "Add your LMP date on the pregnancy page to track your gestational age.",
+    "enterLmpLink": "Enter LMP date",
+    "greetingName": "Hello, {{name}}",
+    "todayActions": "Today",
+    "viewAll": "View all"
+  },
+  "nearby": {
+    "eyebrow": "Nearby facilities",
+    "pageTitle": "Nearby medical help",
+    "subtitle": "Find hospitals, pharmacies, and clinics close to your current location.",
+    "detectingLocation": "Detecting your location...",
+    "locationDenied": "Location access was denied or is not supported by your browser. You can enter coordinates manually below.",
+    "tryAgain": "Try again",
+    "manualLabel": "Enter your location manually",
+    "manualHint": "Enter latitude and longitude separated by a comma, e.g. 33.57, 73.04",
+    "manualPlaceholder": "33.57, 73.04",
+    "invalidCoords": "Please enter valid coordinates (e.g. 33.57, 73.04).",
+    "searchLocation": "Search this location",
+    "loadingFacilities": "Searching for nearby facilities...",
+    "noResults": "No facilities were found near this location. Try increasing the search radius or moving to a different area.",
+    "noneInCategory": "None found in this area.",
+    "groupHospitals": "Hospitals",
+    "groupPharmacies": "Pharmacies",
+    "groupClinics": "Clinics & Doctors",
+    "call": "Call",
+    "directions": "Directions"
   },
   "ai": {
     "pageTitle": "AI Health Assistant",
@@ -233,7 +278,8 @@
     "useManualAssessment": "Use standard assessment instead",
     "micPermissionDenied": "Microphone access was denied. Please allow microphone access or type your message.",
     "recordingFailed": "The recording was too short. Please try again.",
-    "startOver": "Start over"
+    "startOver": "Start over",
+    "chatHelper": "Tell me how you\u2019re feeling in your own words."
   },
   "careMission": {
     "pageTitle": "Care Missions",

@@ -86,8 +86,8 @@ function ReferralDetailView({ referral, onBack, onRefresh, t }) {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="eyebrow">{t('referral.pageTitle')}</p>
-            <h1 className="text-2xl font-bold text-slate-900">{referral.facility?.name || t('referral.facility')}</h1>
-            <p className="mt-1 text-sm text-slate-500">
+            <h1 className="text-2xl font-bold text-[var(--text-primary)]">{referral.facility?.name || t('referral.facility')}</h1>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
               {referral.facility?.facilityType?.replace('_', ' ')}
               {referral.facility?.city ? ` · ${referral.facility.city}` : ''}
             </p>
@@ -98,15 +98,15 @@ function ReferralDetailView({ referral, onBack, onRefresh, t }) {
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <div><span className="text-xs font-semibold uppercase text-slate-500">{t('referral.referralDate')}</span><p className="text-sm">{new Date(referral.referralDate).toLocaleDateString()}</p></div>
-          <div><span className="text-xs font-semibold uppercase text-slate-500">{t('referral.riskLevel')}</span><p className="text-sm"><span className={`risk-${referral.assessment?.riskLevel?.toLowerCase()}`}>{t(RISK_LABEL_KEY[referral.assessment?.riskLevel])}</span></p></div>
-          <div><span className="text-xs font-semibold uppercase text-slate-500">{t('referral.facility')}</span><p className="text-sm">{referral.facility?.name || '—'}</p></div>
+          <div><span className="detail-label">{t('referral.referralDate')}</span><p className="text-sm">{new Date(referral.referralDate).toLocaleDateString()}</p></div>
+          <div><span className="detail-label">{t('referral.riskLevel')}</span><p className="text-sm"><span className={`risk-badge risk-${referral.assessment?.riskLevel?.toLowerCase()}`}>{t(RISK_LABEL_KEY[referral.assessment?.riskLevel])}</span></p></div>
+          <div><span className="detail-label">{t('referral.facility')}</span><p className="text-sm">{referral.facility?.name || '—'}</p></div>
         </div>
       </section>
 
       {/* Visual progress timeline */}
       <section className="content-panel">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">{t('referral.nextStep')}</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-secondary)]">{t('referral.nextStep')}</h2>
         <StatusTimeline currentStatus={referral.status} />
       </section>
 
@@ -133,7 +133,7 @@ function ReferralDetailView({ referral, onBack, onRefresh, t }) {
 
       {showCancel && (
         <section className="content-panel">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-red-600">{t('referral.cancelReferral')}</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--risk-red-fg)]">{t('referral.cancelReferral')}</h2>
           <label className="form-label mt-3">
             {t('referral.cancellationNote')}
             <textarea
@@ -160,23 +160,23 @@ function ReferralDetailView({ referral, onBack, onRefresh, t }) {
 
       {/* Status history */}
       <section className="content-panel">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">{t('referral.statusHistory')}</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-secondary)]">{t('referral.statusHistory')}</h2>
         {!referral.statusHistory || referral.statusHistory.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">{t('referral.noHistory')}</p>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">{t('referral.noHistory')}</p>
         ) : (
           <div className="mt-3 space-y-3">
             {referral.statusHistory.map((entry) => (
               <div className="timeline-entry" key={entry.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-medium text-slate-800">
+                    <p className="text-sm font-medium text-[var(--text-primary)]">
                       {entry.fromStatus ? t(`referral.${entry.fromStatus}`, entry.fromStatus) : '—'}
-                      {' → '}
+                      {' \u2192 '}
                       <strong>{t(`referral.${entry.toStatus}`, entry.toStatus)}</strong>
                     </p>
-                    {entry.note && <p className="mt-1 text-xs text-slate-500">{entry.note}</p>}
+                    {entry.note && <p className="mt-1 text-xs text-[var(--text-muted)]">{entry.note}</p>}
                   </div>
-                  <span className="shrink-0 text-xs text-slate-400">{new Date(entry.createdAt).toLocaleString()}</span>
+                  <span className="shrink-0 text-xs text-[var(--text-muted)]">{new Date(entry.createdAt).toLocaleString()}</span>
                 </div>
               </div>
             ))}
@@ -230,7 +230,7 @@ function ReferralJourneyPage({ user }) {
     loadList()
   }
 
-  if (selectedLoading) return <p className="text-slate-600">{t('referral.loading')}</p>
+  if (selectedLoading) return <p className="text-sm text-[var(--text-muted)]">{t('referral.loading')}</p>
 
   if (selected) {
     return <ReferralDetailView referral={selected} onBack={() => setSelected(null)} onRefresh={handleRefresh} t={t} />
@@ -239,19 +239,19 @@ function ReferralJourneyPage({ user }) {
   return (
     <div>
       <p className="eyebrow">{t('referral.pageTitle')}</p>
-      <h1 className="text-2xl font-bold text-slate-900">{t('referral.pageTitle')}</h1>
-      <p className="mt-2 text-sm text-slate-500">{t('referral.subtitle')}</p>
+      <h1 className="page-title">{t('referral.pageTitle')}</h1>
+      <p className="mt-2 text-sm text-[var(--text-muted)]">{t('referral.subtitle')}</p>
 
-      <label className="mt-4 flex items-center gap-2 text-sm text-slate-600">
+      <label className="mt-4 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
         <input type="checkbox" checked={includeCompleted} onChange={(e) => setIncludeCompleted(e.target.checked)} />
         {t('referral.showCompleted')}
       </label>
 
-      {loading && <p className="mt-4 text-slate-600">{t('referral.loading')}</p>}
+      {loading && <p className="mt-4 text-sm text-[var(--text-muted)]">{t('referral.loading')}</p>}
       {error && <StatusMessage>{error}</StatusMessage>}
 
       {!loading && !error && referrals.length === 0 && (
-        <p className="mt-4 text-slate-500">{t('referral.noReferrals')}</p>
+        <p className="mt-4 text-sm text-[var(--text-muted)]">{t('referral.noReferrals')}</p>
       )}
 
       {!loading && referrals.length > 0 && (
@@ -264,11 +264,11 @@ function ReferralJourneyPage({ user }) {
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <strong className="text-sm text-slate-900">{referral.facility?.name || '—'}</strong>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <strong className="text-sm text-[var(--text-primary)]">{referral.facility?.name || '—'}</strong>
+                  <p className="mt-1 text-xs text-[var(--text-muted)]">
                     {new Date(referral.referralDate).toLocaleDateString()}
                     {referral.assessment?.riskLevel && (
-                      <> · <span className={`risk-${referral.assessment.riskLevel.toLowerCase()}`}>{t(RISK_LABEL_KEY[referral.assessment.riskLevel])}</span></>
+                      <> &middot; <span className={`risk-badge risk-${referral.assessment.riskLevel.toLowerCase()}`}>{t(RISK_LABEL_KEY[referral.assessment.riskLevel])}</span></>
                     )}
                   </p>
                 </div>

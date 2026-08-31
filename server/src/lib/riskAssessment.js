@@ -1,3 +1,5 @@
+const { isPreterm, isPostterm } = require('./gestationalAge')
+
 // Risk level priority: higher index wins when aggregating.
 const RISK_PRIORITY = { GREEN: 0, YELLOW: 1, RED: 2 }
 
@@ -101,10 +103,20 @@ function evaluateSymptom(code, answerStatus, severity) {
   return { riskLevel, isEmergency }
 }
 
-function calculateRiskAssessment(symptomAnswers) {
+// Symptom codes representing pain, contractions, or fluid leak.
+// When any of these are PRESENT in a preterm pregnancy the risk engine
+// forces RED with reason "preterm_labor_risk".
+const LABOR_SYMPTOM_CODES = new Set([
+  'contractions',
+  'fluid_leak',
+  'severe_abdominal_pain',
+])
+
+function calculateRiskAssessment(symptomAnswers, gestationalWeeks = null) {
   let highestRisk = 'GREEN'
   let isEmergency = false
   let resultCode = 'ALL_CLEAR'
+  let hasLaborSymptom = false
 
   for (const symptom of symptomAnswers) {
     const { riskLevel, isEmergency: symptomEmergency } = evaluateSymptom(
@@ -119,6 +131,13 @@ function calculateRiskAssessment(symptomAnswers) {
     if (symptomEmergency) {
       isEmergency = true
     }
+
+    if (
+      LABOR_SYMPTOM_CODES.has(symptom.code)
+      && symptom.answerStatus === 'PRESENT'
+    ) {
+      hasLaborSymptom = true
+    }
   }
 
   // Assign a result code describing WHY the final level was chosen.
@@ -128,6 +147,20 @@ function calculateRiskAssessment(symptomAnswers) {
     resultCode = 'REQUIRES_EVALUATION'
   } else {
     resultCode = 'ALL_CLEAR'
+  }
+
+  // ── Gestational-age escalation ──────────────────────────────────
+  // Preterm + labor symptom → force RED (immediate delivery risk).
+  if (hasLaborSymptom && isPreterm(gestationalWeeks)) {
+    highestRisk = 'RED'
+    resultCode = 'PRETERM_LABOR_RISK'
+    isEmergency = true
+  }
+
+  // Postterm → force at least YELLOW (overdue pregnancy risk).
+  if (isPostterm(gestationalWeeks) && RISK_PRIORITY[highestRisk] < RISK_PRIORITY.YELLOW) {
+    highestRisk = 'YELLOW'
+    resultCode = 'POSTTERM_PREGNANCY'
   }
 
   return { riskLevel: highestRisk, resultCode, isEmergency }
