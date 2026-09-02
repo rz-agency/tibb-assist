@@ -150,3 +150,9 @@ export const updateChecklistItem = (missionId, itemId, isCompleted) =>
     method: 'PATCH',
     body: JSON.stringify({ isCompleted }),
   })
+
+export const logEmergencyAction = (missionId, actionType) =>
+  apiRequest(`/care-missions/${missionId}/emergency-action-log`, {
+    method: 'POST',
+    body: JSON.stringify({ actionType }),
+  })

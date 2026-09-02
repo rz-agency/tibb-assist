@@ -100,6 +100,7 @@ async function message(req, res) {
         clarificationQuestion: extractionResult.clarificationQuestion,
         extractedSymptoms: extractionResult.extractedSymptoms,
         readyForAssessment: false,
+        urgentIntentDetected: extractionResult.urgentIntentDetected === true,
       })
     }
 
@@ -112,6 +113,7 @@ async function message(req, res) {
         needsClarification: false,
         extractedSymptoms: extractionResult.extractedSymptoms,
         readyForAssessment: true,
+        urgentIntentDetected: extractionResult.urgentIntentDetected === true,
       })
     }
 
@@ -123,6 +125,7 @@ async function message(req, res) {
       needsClarification: false,
       extractedSymptoms: extractionResult.extractedSymptoms,
       readyForAssessment: false,
+      urgentIntentDetected: extractionResult.urgentIntentDetected === true,
     })
   } catch (error) {
     console.error('AI assistant message error:', error.message)

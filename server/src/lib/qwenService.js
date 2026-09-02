@@ -144,6 +144,16 @@ CONVERSATION FLOW:
 - When readyForAssessment is true, clearly state in chatReply: "Main ne yeh symptoms note kiye hain. Ab assessment shuru karne ke liye neechay Confirm button dabayein." (I have noted these symptoms. Now press the Confirm button below to start the assessment.) Do NOT ask "what would you like to do next?" or "kya karna hai?" — the app handles that automatically.
 - For pregnancy-related warning symptoms (heavy bleeding, severe headache, blurred vision, reduced baby movement, contractions, fever, abdominal pain), acknowledge them with appropriate concern in chatReply. For example: "Pait mein dard aur bukhar pregnancy mein important signs ho sakte hain, main inhein note kar rahi hoon." Do NOT just say "noted" — show that you understand these may need attention.
 
+URGENCY INTENT DETECTION:
+- Set "urgentIntentDetected" to true when the user's message signals an urgent need for help, based on these trigger CONCEPTS — recognize the intent in any language or phrasing, do NOT keyword-match exact strings:
+  - Severe or extreme pain (e.g. "bardasht nahi", "unbearable pain")
+  - Labor contractions
+  - Water breaking or fluid leakage
+  - An explicit request to call someone for help (ambulance, Rescue 1122, husband, sister, family, LHW, or anyone else)
+- Ordinary or mild symptom descriptions (e.g. "halka sardard", "thoda bukhar", "mild headache") must leave "urgentIntentDetected" as false.
+- "urgentIntentDetected" is NOT a risk level. It MUST NOT influence your symptom extraction in any way. It only tells the app to show quick-call buttons. Risk levels (GREEN/YELLOW/RED) are calculated separately by a deterministic rule engine.
+- When "urgentIntentDetected" is true, continue the normal conversation flow exactly as usual — do not skip, replace, or interrupt any step.
+
 For each message, respond with a JSON object in this EXACT format:
 {
   "chatReply": "Your conversational response in Roman Urdu (friendly, supportive, brief)",
@@ -157,7 +167,8 @@ For each message, respond with a JSON object in this EXACT format:
   ],
   "needsClarification": false,
   "clarificationQuestion": null,
-  "readyForAssessment": false
+  "readyForAssessment": false,
+  "urgentIntentDetected": false
 }
 
 Rules for the response:
@@ -194,6 +205,7 @@ async function extractSymptoms(userMessage, conversationHistory, symptomCatalog)
       extractedSymptoms: [],
       needsClarification: false,
       readyForAssessment: false,
+      urgentIntentDetected: false,
     }
   }
 
@@ -205,6 +217,7 @@ async function extractSymptoms(userMessage, conversationHistory, symptomCatalog)
       needsClarification: !!parsed.needsClarification,
       clarificationQuestion: parsed.clarificationQuestion || null,
       readyForAssessment: !!parsed.readyForAssessment,
+      urgentIntentDetected: !!parsed.urgentIntentDetected,
     }
   } catch {
     return {
@@ -212,6 +225,7 @@ async function extractSymptoms(userMessage, conversationHistory, symptomCatalog)
       extractedSymptoms: [],
       needsClarification: false,
       readyForAssessment: false,
+      urgentIntentDetected: false,
     }
   }
 }

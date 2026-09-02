@@ -173,6 +173,18 @@
     "contactAdded": "Emergency contact added.",
     "contactDeleted": "Emergency contact deleted."
   },
+  "emergencyPanel": {
+    "eyebrow": "Urgent support",
+    "title": "Emergency calls",
+    "disclaimer": "You place these calls yourself — tapping a button opens your phone's dialer. Nothing is called or sent automatically.",
+    "loading": "Loading emergency call options...",
+    "callRescue1122": "Call Rescue 1122",
+    "callContact": "Call {{name}}",
+    "primaryContactLabel": "Primary contact",
+    "callLhw": "Call {{name}} (LHW)",
+    "noContactPrompt": "No emergency contact saved yet.",
+    "addContactLink": "Add an emergency contact"
+  },
   "lhw": {
     "workspaceEyebrow": "LHW workspace",
     "pageTitle": "Assigned women",
@@ -287,6 +299,7 @@
     "micPermissionDenied": "Microphone access was denied. Please allow microphone access or type your message.",
     "recordingFailed": "The recording was too short. Please try again.",
     "startOver": "Start over",
+    "urgentIntentNotice": "It sounds like you may need urgent help — here are quick actions.",
     "chatHelper": "Tell me how you\u2019re feeling in your own words."
   },
   "careMission": {

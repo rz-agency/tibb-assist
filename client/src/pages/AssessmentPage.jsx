@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createAssessment, createReferral, getFacilities, getPatientProfile, getSymptoms } from '../api/api'
 import StatusMessage from '../components/StatusMessage'
+import EmergencyPanel from '../components/EmergencyPanel'
 import { ShieldIcon, AlertIcon, HeartIcon } from '../components/Illustrations'
 
 const RISK_LABEL_KEY = { GREEN: 'assessment.riskGreen', YELLOW: 'assessment.riskYellow', RED: 'assessment.riskRed' }
@@ -173,6 +174,10 @@ function AssessmentPage({ user, onNavigate }) {
             </p>
           </div>
         </div>
+
+        {completedAssessment.riskLevel === 'RED' && (
+          <EmergencyPanel user={user} assessmentId={completedAssessment.id} onNavigate={onNavigate} />
+        )}
 
         {completedAssessment.pregnancy && (
           <p className="text-sm text-[var(--text-muted)]">

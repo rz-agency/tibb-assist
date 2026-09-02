@@ -7,6 +7,17 @@ const allStatuses = ['OPEN', 'IN_PROGRESS', 'ESCALATED', 'COMPLETED', 'CANCELLED
 // Risk-level sort priority: RED first, then YELLOW, then GREEN.
 const riskPriority = { RED: 0, YELLOW: 1, GREEN: 2 }
 
+// Emergency Voice Mode: the client logs that the user tapped a call button
+// (i.e. opened a tel: link). The wording records initiation only — never
+// that a call was completed, an ambulance was dispatched, or anyone was
+// notified or acknowledged anything.
+const emergencyActionTypes = ['CALLED_RESCUE_1122', 'CALLED_EMERGENCY_CONTACT', 'CALLED_LHW']
+const emergencyActionNotes = {
+  CALLED_RESCUE_1122: 'User initiated call to Rescue 1122.',
+  CALLED_EMERGENCY_CONTACT: 'User initiated call to primary emergency contact.',
+  CALLED_LHW: 'User initiated call to assigned LHW.',
+}
+
 function parsePositiveInteger(value) {
   const parsed = Number(value)
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null
@@ -305,8 +316,75 @@ async function updateChecklistItem(req, res) {
   }
 }
 
+// ---------- POST /api/care-missions/:id/emergency-action-log ----------
+
+async function logEmergencyAction(req, res) {
+  const missionId = parsePositiveInteger(req.params.missionId)
+  if (!missionId) {
+    return res.status(400).json({ error: 'Care mission id must be a positive integer.' })
+  }
+
+  const { actionType } = req.body || {}
+  if (!emergencyActionTypes.includes(actionType)) {
+    return res.status(400).json({
+      error: 'actionType must be one of: CALLED_RESCUE_1122, CALLED_EMERGENCY_CONTACT, CALLED_LHW.',
+    })
+  }
+
+  try {
+    const mission = await prisma.careMission.findUnique({
+      where: { id: missionId },
+      select: { id: true },
+    })
+
+    if (!mission) {
+      return res.status(404).json({ error: 'Care mission not found.' })
+    }
+
+    const accessFilter = await getCareMissionAccessFilter(req.user)
+    if (!accessFilter) {
+      return res.status(403).json({ error: 'You do not have permission to modify care missions.' })
+    }
+
+    const accessibleMission = await prisma.careMission.findFirst({
+      where: { id: missionId, ...accessFilter },
+      select: { id: true },
+    })
+
+    if (!accessibleMission) {
+      return res.status(403).json({ error: 'You do not have permission to modify care missions.' })
+    }
+
+    const entry = await prisma.careMissionTimeline.create({
+      data: {
+        careMissionId: missionId,
+        action: 'EMERGENCY_CALL_INITIATED',
+        fromStatus: null,
+        toStatus: null,
+        notes: emergencyActionNotes[actionType],
+        createdByUserId: req.user.id,
+      },
+      // Matches the timelineEntries shape returned by GET /care-missions/:id.
+      select: {
+        id: true,
+        action: true,
+        fromStatus: true,
+        toStatus: true,
+        notes: true,
+        createdByUserId: true,
+        createdAt: true,
+      },
+    })
+
+    return res.status(201).json({ entry })
+  } catch (error) {
+    return handleDatabaseError(error, res)
+  }
+}
+
 module.exports = {
   listCareMissions,
   getCareMission,
   updateChecklistItem,
+  logEmergencyAction,
 }

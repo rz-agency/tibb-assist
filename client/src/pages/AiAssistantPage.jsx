@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { confirmAiAssessment, createReferral, sendAiMessage } from '../api/api'
 import StatusMessage from '../components/StatusMessage'
+import EmergencyPanel from '../components/EmergencyPanel'
 
 const RISK_LABEL_KEY = { GREEN: 'assessment.riskGreen', YELLOW: 'assessment.riskYellow', RED: 'assessment.riskRed' }
 
@@ -38,6 +39,9 @@ function AiAssistantPage({ user, onNavigate }) {
   const [referralSuccess, setReferralSuccess] = useState('')
   const [referralError, setReferralError] = useState('')
   const [error, setError] = useState('')
+  // Emergency intent: set when the AI detects an urgent help request in the
+  // woman's message. UI trigger only — completely independent of the risk level.
+  const [urgentIntent, setUrgentIntent] = useState(false)
 
   const mediaRecorderRef = useRef(null)
   const recognitionRef = useRef(null)
@@ -208,6 +212,12 @@ function AiAssistantPage({ user, onNavigate }) {
         setExtractedSymptoms(result.extractedSymptoms)
       }
 
+      // Once urgency is detected, keep the emergency panel available for the
+      // rest of the conversation — it is additive and never hides on its own.
+      if (result.urgentIntentDetected) {
+        setUrgentIntent(true)
+      }
+
       if (result.readyForAssessment) {
         setPhase('ready')
       } else {
@@ -309,6 +319,7 @@ function AiAssistantPage({ user, onNavigate }) {
     setReferralSuccess('')
     setReferralError('')
     setError('')
+    setUrgentIntent(false)
   }
 
   if (user.role !== 'WOMAN') {
@@ -357,6 +368,13 @@ function AiAssistantPage({ user, onNavigate }) {
 
           {error && <StatusMessage>{error}</StatusMessage>}
 
+          {urgentIntent && (!showResult || assessment.riskLevel !== 'RED') && (
+            <div className="ai-urgent-intent">
+              <p className="text-sm text-[var(--text-secondary)]">{t('ai.urgentIntentNotice')}</p>
+              <EmergencyPanel user={user} assessmentId={assessment?.id} onNavigate={onNavigate} />
+            </div>
+          )}
+
           {showResult && (
             <div className="ai-result-section" ref={resultSectionRef}>
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -368,6 +386,10 @@ function AiAssistantPage({ user, onNavigate }) {
             </div>
             {aiExplanation && <p className="mt-4 text-[var(--text-secondary)]">{aiExplanation}</p>}
             {assessment.pregnancy && <p className="mt-3 text-sm text-[var(--text-muted)]">{t('assessment.linkedPregnancy')} {assessment.pregnancy.pregnancyStatus}</p>}
+
+            {assessment.riskLevel === 'RED' && (
+              <EmergencyPanel user={user} assessmentId={assessment.id} onNavigate={onNavigate} />
+            )}
 
             <div className="mt-6 border-t border-[var(--border-soft)] pt-5">
               <h2 className="font-semibold text-[var(--text-primary)]">{t('assessment.recordedAnswers')}</h2>
