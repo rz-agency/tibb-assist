@@ -56,6 +56,14 @@ export const updateLhwProfile = (userId, details) => apiRequest(`/lhws/${userId}
   body: JSON.stringify(details),
 })
 
+export const getUnassignedPatients = () => apiRequest('/patients/unassigned')
+
+export const assignPatientToLhw = (patientId, lhwId) =>
+  apiRequest(`/patients/${patientId}/assign-lhw`, {
+    method: 'PATCH',
+    body: JSON.stringify({ lhwId }),
+  })
+
 export const getFacilities = () => apiRequest('/facilities')
 
 export const getNearbyFacilities = (lat, lng, radius = 5000) =>

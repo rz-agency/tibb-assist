@@ -182,7 +182,15 @@
     "referralsEyebrow": "Referrals",
     "loadingReferrals": "Loading referrals...",
     "locationNotRecorded": "Location not recorded",
-    "symptomRecords": "{{count}} symptom records"
+    "symptomRecords": "{{count}} symptom records",
+    "unassignedTitle": "Unassigned patients",
+    "unassignedLoading": "Loading unassigned patients...",
+    "noUnassigned": "No patients are waiting for assignment right now.",
+    "registeredOn": "Registered {{date}}",
+    "activePregnancy": "Active pregnancy",
+    "assignToMe": "Assign to me",
+    "assigning": "Assigning...",
+    "assignSuccess": "{{name}} is now assigned to you."
   },
   "dashboard": {
     "yourCareSpace": "Your care space",

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getAssessment, getAssessments, getCareMissions, getLhwProfile, getReferrals, updateLhwProfile } from '../api/api'
+import { assignPatientToLhw, getAssessment, getAssessments, getCareMissions, getLhwProfile, getReferrals, getUnassignedPatients, updateLhwProfile } from '../api/api'
 import StatusMessage from '../components/StatusMessage'
 
 const RISK_LABEL_KEY = { GREEN: 'assessment.riskGreen', YELLOW: 'assessment.riskYellow', RED: 'assessment.riskRed' }
@@ -34,14 +34,21 @@ function LhwDashboard({ user, onNavigate }) {
   const [careMissions, setCareMissions] = useState([])
   const [careMissionsLoading, setCareMissionsLoading] = useState(true)
   const [careMissionsError, setCareMissionsError] = useState('')
+  const [unassignedPatients, setUnassignedPatients] = useState([])
+  const [unassignedLoading, setUnassignedLoading] = useState(true)
+  const [unassignedError, setUnassignedError] = useState('')
+  const [assigningPatientId, setAssigningPatientId] = useState(null)
+  const [assignSuccess, setAssignSuccess] = useState('')
+  const [assignError, setAssignError] = useState('')
 
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        const [lhwProfile, assessmentResult, missionsResult] = await Promise.all([
+        const [lhwProfile, assessmentResult, missionsResult, unassignedResult] = await Promise.all([
           getLhwProfile(user.id),
           getAssessments(),
           getCareMissions().catch((err) => ({ careMissions: [], error: err.message })),
+          getUnassignedPatients().catch((err) => ({ patients: [], error: err.message })),
         ])
         setProfile(lhwProfile)
         setAssessments(assessmentResult.assessments)
@@ -50,11 +57,17 @@ function LhwDashboard({ user, onNavigate }) {
         } else {
           setCareMissions(missionsResult.careMissions)
         }
+        if (unassignedResult.error) {
+          setUnassignedError(unassignedResult.error)
+        } else {
+          setUnassignedPatients(unassignedResult.patients)
+        }
       } catch (requestError) {
         setError(requestError.message)
       } finally {
         setLoading(false)
         setCareMissionsLoading(false)
+        setUnassignedLoading(false)
       }
     }
 
@@ -121,6 +134,22 @@ function LhwDashboard({ user, onNavigate }) {
       setReferralsError(requestError.message)
     } finally {
       setReferralsLoading(false)
+    }
+  }
+
+  const assignPatient = async (patient) => {
+    setAssigningPatientId(patient.id)
+    setAssignSuccess('')
+    setAssignError('')
+    try {
+      const result = await assignPatientToLhw(patient.id, user.id)
+      setUnassignedPatients((prev) => prev.filter((p) => p.id !== patient.id))
+      setProfile((prev) => (prev ? { ...prev, assignedPatients: [...prev.assignedPatients, result.patient] } : prev))
+      setAssignSuccess(t('lhw.assignSuccess', { name: patient.fullName }))
+    } catch (requestError) {
+      setAssignError(requestError.message)
+    } finally {
+      setAssigningPatientId(null)
     }
   }
 
@@ -199,6 +228,29 @@ function LhwDashboard({ user, onNavigate }) {
       </section>
     )}
     {!profileEditing && <div className="mb-6"><button className="button-secondary" onClick={startProfileEdit}>{t('common.editProfile')}</button></div>}
+    <section className="mb-6">
+      <h2 className="mb-3 font-semibold text-[var(--text-primary)]">{t('lhw.unassignedTitle')}</h2>
+      {unassignedLoading && <p className="text-sm text-[var(--text-muted)]">{t('lhw.unassignedLoading')}</p>}
+      {unassignedError && <StatusMessage>{unassignedError}</StatusMessage>}
+      {assignSuccess && <StatusMessage tone="success">{assignSuccess}</StatusMessage>}
+      {assignError && <StatusMessage>{assignError}</StatusMessage>}
+      {!unassignedLoading && !unassignedError && unassignedPatients.length === 0 && <p className="text-sm text-[var(--text-muted)]">{t('lhw.noUnassigned')}</p>}
+      {unassignedPatients.length > 0 && (
+        <div className="space-y-3">
+          {unassignedPatients.map((patient) => (
+            <div className="history-item" key={patient.id}>
+              <span>
+                <strong className="text-[var(--text-primary)]">{patient.fullName}</strong>
+                <small>{`${patient.district || patient.villageOrArea || t('lhw.locationNotRecorded')} · ${t('lhw.registeredOn', { date: formatDate(patient.createdAt) })}`}{patient.pregnancies?.length > 0 && ` · ${t('lhw.activePregnancy')}`}</small>
+              </span>
+              <button className="button-secondary" disabled={assigningPatientId === patient.id} onClick={() => assignPatient(patient)}>
+                {assigningPatientId === patient.id ? t('lhw.assigning') : t('lhw.assignToMe')}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
     {profile.assignedPatients.length === 0 && <section className="content-panel"><p className="text-[var(--text-secondary)]">{t('lhw.noWomenAssigned')}</p></section>}
     {profile.assignedPatients.length > 0 && <div className="grid gap-6 lg:grid-cols-[minmax(0,280px)_1fr]">
       <section><h2 className="mb-3 font-semibold text-[var(--text-primary)]">{t('lhw.pageTitle')}</h2><div className="space-y-3">{profile.assignedPatients.map((patient) => <button className="history-item" key={patient.id} onClick={() => { openPatient(patient); setError('') }}><span><strong className="text-[var(--text-primary)]">{patient.fullName}</strong><small>{patient.district || patient.villageOrArea || t('lhw.locationNotRecorded')}</small></span></button>)}</div></section>

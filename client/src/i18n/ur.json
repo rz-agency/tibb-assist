@@ -182,7 +182,15 @@
     "referralsEyebrow": "ریفرلز",
     "loadingReferrals": "ریفرلز لوڈ ہو رہے ہیں...",
     "locationNotRecorded": "مقام درج نہیں",
-    "symptomRecords": "{{count}} علامات کے ریکارڈ"
+    "symptomRecords": "{{count}} علامات کے ریکارڈ",
+    "unassignedTitle": "غیر مقرر کردہ خواتین",
+    "unassignedLoading": "غیر مقرر کردہ خواتین لوڈ ہو رہی ہیں...",
+    "noUnassigned": "اس وقت کوئی خاتون مقرر ہونے کے انتظار میں نہیں ہے۔",
+    "registeredOn": "رجسٹریشن {{date}}",
+    "activePregnancy": "حمل جاری ہے",
+    "assignToMe": "میرے ذمے کریں",
+    "assigning": "مقرر ہو رہی ہے...",
+    "assignSuccess": "{{name}} اب آپ کے ذمے ہیں۔"
   },
   "dashboard": {
     "yourCareSpace": "آپ کی دیکھ بھال کی جگہ",
