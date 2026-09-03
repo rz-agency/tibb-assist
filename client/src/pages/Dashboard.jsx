@@ -121,7 +121,7 @@ function Dashboard({ user, onNavigate }) {
       <div className="hero-card flex flex-col-reverse items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex-1">
           <p className="eyebrow">{t('dashboard.yourCareSpace')}</p>
-          <h1 className="page-title" style={{ color: 'var(--teal-900)' }}>
+          <h1 className="page-title">
             {t('dashboard.greetingName', { defaultValue: `Hello, ${displayName}`, name: displayName })}
           </h1>
           <p className="mt-2 text-[var(--text-secondary)]">{t('dashboard.workspaceDescription')}</p>
@@ -211,22 +211,22 @@ function Dashboard({ user, onNavigate }) {
         <p className="eyebrow">{t('dashboard.todayActions', { defaultValue: 'Today' })}</p>
         <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <button className="action-card" onClick={() => onNavigate('assessment')}>
-            <span className="action-icon" style={{ background: 'var(--teal-50)', color: 'var(--teal-700)' }}><ShieldIcon size={20} /></span>
+            <span className="action-icon action-icon-gold"><ShieldIcon size={20} /></span>
             <strong>{t('dashboard.startAssessment')}</strong>
             <span className="text-sm">{t('dashboard.recordSymptoms')}</span>
           </button>
           <button className="action-card" onClick={() => onNavigate('history')}>
-            <span className="action-icon" style={{ background: 'var(--lavender-50)', color: 'var(--lavender-500)' }}>=</span>
+            <span className="action-icon">=</span>
             <strong>{t('dashboard.assessmentHistory')}</strong>
             <span className="text-sm">{t('dashboard.reviewRecords')}</span>
           </button>
           <button className="action-card" onClick={() => onNavigate('pregnancy')}>
-            <span className="action-icon" style={{ background: 'var(--coral-50)', color: 'var(--coral-500)' }}><HeartIcon size={20} /></span>
+            <span className="action-icon"><HeartIcon size={20} /></span>
             <strong>{t('dashboard.pregnancyCardTitle')}</strong>
             <span className="text-sm">{t('dashboard.pregnancyCardDescription')}</span>
           </button>
           <button className="action-card" onClick={() => onNavigate('nearby')}>
-            <span className="action-icon" style={{ background: 'var(--amber-50)', color: 'var(--amber-600)' }}>&#9956;</span>
+            <span className="action-icon">&#9956;</span>
             <strong>{t('dashboard.nearbyCardTitle')}</strong>
             <span className="text-sm">{t('dashboard.nearbyCardDescription')}</span>
           </button>

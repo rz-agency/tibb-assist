@@ -50,7 +50,7 @@ function AssessmentResultSection({ assessment, aiExplanation, notedSymptoms, fac
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="detail-label">{t('assessment.riskLevel')}</p>
-          <span className={`risk-${assessment.riskLevel.toLowerCase()}`}>{t(RISK_LABEL_KEY[assessment.riskLevel])}</span>
+          <span className={`risk-badge risk-${assessment.riskLevel.toLowerCase()}`}>{t(RISK_LABEL_KEY[assessment.riskLevel])}</span>
         </div>
         <p className="text-xs text-[var(--text-muted)]">{t('assessment.calculatedFromAnswers')}</p>
       </div>

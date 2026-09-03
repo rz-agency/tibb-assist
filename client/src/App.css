@@ -1,6 +1,8 @@
 /* ─────────────────────────────────────────────────────────
    Tibb Assist — Component Design System
-   Warm, whimsical pregnancy-care UI
+   Restrained, professional pregnancy-care UI:
+   deep teal / cream / navy neutrals, sparing gold accents,
+   saturated colour reserved for risk status surfaces.
    ───────────────────────────────────────────────────────── */
 
 /* ── Eyebrow + page titles ──────────────────────────────── */
@@ -15,7 +17,7 @@
 }
 .page-title {
   margin: 0;
-  color: var(--text-primary);
+  color: var(--teal-900);
   font-family: var(--font-display);
   font-size: var(--text-4xl);
   font-weight: 700;
@@ -47,23 +49,24 @@
   justify-content: center;
   gap: var(--space-2);
   border: 0;
-  border-radius: var(--radius-full);
-  background: var(--gradient-warm);
+  border-radius: var(--radius-sm);
+  background: var(--teal-900);
   padding: 12px 24px;
   color: var(--text-inverse);
   font-family: var(--font-body);
   font-size: var(--text-sm);
   font-weight: 700;
   cursor: pointer;
-  box-shadow: var(--shadow-sm), var(--shadow-glow-teal);
-  transition: transform var(--duration-fast) var(--ease-spring),
-              box-shadow var(--duration-normal) var(--ease-out);
+  box-shadow: var(--shadow-rest);
+  transition: background var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-normal) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
 }
 .button-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md), var(--shadow-glow-teal);
+  background: var(--teal-700);
+  box-shadow: var(--shadow-hover);
 }
-.button-primary:active:not(:disabled) { transform: translateY(0); }
+.button-primary:active:not(:disabled) { transform: scale(0.98); }
 .button-primary:disabled { cursor: wait; opacity: 0.6; }
 
 .button-secondary {
@@ -72,7 +75,7 @@
   justify-content: center;
   gap: var(--space-2);
   border: 1.5px solid var(--border-soft);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   background: var(--bg-card);
   padding: 9px 18px;
   color: var(--teal-700);
@@ -82,13 +85,15 @@
   cursor: pointer;
   transition: border-color var(--duration-fast) var(--ease-out),
               background var(--duration-fast) var(--ease-out),
-              transform var(--duration-fast) var(--ease-spring);
+              box-shadow var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
 }
 .button-secondary:hover {
   border-color: var(--teal-400);
   background: var(--teal-50);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-xs);
 }
+.button-secondary:active { transform: scale(0.98); }
 
 .link-button {
   border: 0; background: none; padding: 0;
@@ -115,7 +120,7 @@
 .form-input {
   width: 100%;
   border: 1.5px solid var(--border-input);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--bg-input);
   padding: 12px 14px;
   color: var(--text-primary);
@@ -149,7 +154,7 @@ html[dir="rtl"] select.form-input {
 /* Hero card — full-width gradient with illustration area */
 .hero-card {
   position: relative;
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-xl);
   background: var(--gradient-hero);
   padding: var(--space-8) var(--space-8);
   overflow: hidden;
@@ -157,10 +162,10 @@ html[dir="rtl"] select.form-input {
 .hero-card::before {
   content: '';
   position: absolute;
-  top: -30%; right: -10%;
+  top: -30%; inset-inline-end: -10%;
   width: 280px; height: 280px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(20,125,112,0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(15,76,92,0.07) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -168,12 +173,13 @@ html[dir="rtl"] select.form-input {
 .content-panel {
   background: var(--bg-card);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   padding: var(--space-6);
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--duration-normal) var(--ease-out);
+  box-shadow: var(--shadow-rest);
+  transition: box-shadow var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
 }
-.content-panel:hover { box-shadow: var(--shadow-md); }
+.content-panel:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
 
 /* Edit-mode emphasis — marks a panel repurposed for editing so it reads
    as "the form that just opened" (e.g. Pregnancy page edit flow) */
@@ -195,7 +201,7 @@ html[dir="rtl"] select.form-input {
 .tinted-card {
   background: var(--gradient-card-warm);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   padding: var(--space-5);
 }
 
@@ -224,6 +230,7 @@ html[dir="rtl"] select.form-input {
   gap: var(--space-4);
   border-radius: var(--radius-xl);
   padding: var(--space-5) var(--space-6);
+  animation: result-reveal var(--duration-slow) var(--ease-out) both;
 }
 .risk-result-hero.risk-green  { background: var(--gradient-risk-green); border: 1px solid var(--risk-green-ring); }
 .risk-result-hero.risk-yellow { background: var(--gradient-risk-amber); border: 1px solid var(--risk-amber-ring); }
@@ -271,6 +278,9 @@ html[dir="rtl"] select.form-input {
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
+.emergency-call-button:active {
+  transform: translateY(0) scale(0.98);
+}
 .emergency-call-button small {
   color: var(--text-muted);
   font-size: var(--text-xs);
@@ -313,7 +323,7 @@ html[dir="rtl"] select.form-input {
    STATUS MESSAGES (error / success)
    ════════════════════════════════════════════════════════ */
 .status-message {
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--risk-red-bg);
   border: 1px solid var(--risk-red-ring);
   padding: var(--space-3) var(--space-4);
@@ -363,8 +373,8 @@ html[dir="rtl"] select.form-input {
 }
 .nav-item:hover { background: var(--teal-50); color: var(--teal-700); }
 .nav-item-active {
-  background: var(--teal-100);
-  color: var(--teal-900);
+  background: var(--teal-900);
+  color: var(--text-inverse);
   font-weight: 700;
 }
 
@@ -375,7 +385,7 @@ html[dir="rtl"] select.form-input {
   display: grid;
   gap: var(--space-2);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   background: var(--bg-card);
   padding: var(--space-5);
   text-align: start;
@@ -384,23 +394,29 @@ html[dir="rtl"] select.form-input {
   font-family: var(--font-body);
   box-shadow: var(--shadow-xs);
   transition: border-color var(--duration-fast) var(--ease-out),
-              box-shadow var(--duration-normal) var(--ease-out),
-              transform var(--duration-fast) var(--ease-spring);
+              box-shadow var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
 }
 .action-card:hover {
   border-color: var(--teal-400);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
 }
+.action-card:active { transform: translateY(0) scale(0.99); }
 .action-card strong { color: var(--text-primary); font-size: var(--text-base); font-weight: 700; }
 .action-icon {
   width: 40px; height: 40px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--teal-50);
   color: var(--teal-700);
   display: grid; place-items: center;
   font-size: 20px; font-weight: 700;
   margin-bottom: var(--space-1);
+}
+/* Gold variant — sparing accent for the primary dashboard action */
+.action-icon-gold {
+  background: var(--amber-50);
+  color: var(--amber-700);
 }
 .action-card-muted { cursor: default; background: var(--bg-subtle); }
 .action-card-muted:hover { border-color: var(--border-soft); transform: none; box-shadow: var(--shadow-xs); }
@@ -422,9 +438,10 @@ html[dir="rtl"] select.form-input {
   cursor: pointer;
   font-family: var(--font-body);
   transition: border-color var(--duration-fast) var(--ease-out),
-              box-shadow var(--duration-fast) var(--ease-out);
+              box-shadow var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
 }
-.history-item:hover { border-color: var(--teal-400); box-shadow: var(--shadow-sm); }
+.history-item:hover { border-color: var(--teal-400); box-shadow: var(--shadow-hover); transform: translateY(-2px); }
 .history-item span:first-child { display: grid; gap: 4px; }
 .history-item small { color: var(--text-muted); font-size: var(--text-xs); }
 
@@ -588,17 +605,18 @@ html[dir="rtl"] select.form-input {
   display: block;
   width: 100%;
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   background: var(--bg-card);
   padding: var(--space-4) var(--space-5);
   text-align: start;
   cursor: pointer;
   box-shadow: var(--shadow-xs);
   transition: border-color var(--duration-fast) var(--ease-out),
-              box-shadow var(--duration-normal) var(--ease-out),
-              transform var(--duration-fast) var(--ease-spring);
+              box-shadow var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
 }
-.cm-mission-card:hover { border-color: var(--teal-400); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.cm-mission-card:hover { border-color: var(--teal-400); box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+.cm-mission-card:active { transform: translateY(0) scale(0.99); }
 .cm-mission-red    { border-inline-start: 4px solid var(--risk-red-fg); }
 .cm-mission-yellow { border-inline-start: 4px solid var(--risk-amber-fg); }
 
@@ -760,6 +778,21 @@ html[dir="rtl"] select.form-input {
 .ai-result-section {
   padding: var(--space-5);
   border-top: 1px solid var(--border-soft);
+  animation: result-reveal var(--duration-slow) var(--ease-out) both;
+}
+/* Embedded result section typography — serif section heads sit
+   a step below the page title for clear hierarchy */
+.ai-result-section h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+/* The result's own risk badge reads slightly larger than list badges */
+.ai-result-section .risk-badge {
+  font-size: var(--text-sm);
+  padding: 6px 14px;
 }
 .ai-urgent-intent {
   display: grid;
@@ -852,7 +885,7 @@ html[dir="rtl"] select.form-input {
   font-weight: 600;
 }
 .ga-pill-week    { background: var(--teal-50);   color: var(--teal-700);  border: 1px solid var(--teal-200); }
-.ga-pill-tri     { background: #eef4ff;           color: #2563eb;          border: 1px solid #c7d9f7; }
+.ga-pill-tri     { background: var(--teal-100);  color: var(--teal-900);  border: 1px solid var(--teal-200); }
 .ga-pill-remain  { background: var(--amber-50);   color: var(--amber-700); border: 1px solid var(--amber-200); }
 .ga-pill-overdue { background: var(--risk-red-bg); color: var(--risk-red-fg); border: 1px solid var(--risk-red-ring); }
 .ga-pill-postterm { background: var(--risk-red-bg); color: var(--risk-red-fg); border: 1px solid var(--risk-red-ring); font-weight: 700; }
@@ -887,8 +920,8 @@ html[dir="rtl"] select.form-input {
   justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-5);
-  border: 1px solid var(--teal-500);
-  border-radius: var(--radius-xl);
+  border: 1px solid var(--teal-400);
+  border-radius: var(--radius-lg);
   background: var(--teal-50);
 }
 .checkin-banner-text {
@@ -917,6 +950,18 @@ html[dir="rtl"] select.form-input {
 /* The shared result section keeps its chat-panel top border — remove it when
    the section is used standalone inside a content panel. */
 .checkin-result-wrap .ai-result-section { border-top: none; }
+
+/* ════════════════════════════════════════════════════════
+   RESULT REVEAL (risk result fade/scale-in)
+   ════════════════════════════════════════════════════════ */
+@keyframes result-reveal {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .risk-result-hero,
+  .ai-result-section { animation: none; }
+}
 
 /* ════════════════════════════════════════════════════════
    RTL OVERRIDES

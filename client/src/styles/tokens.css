@@ -1,26 +1,28 @@
 /* ─────────────────────────────────────────────────────────
    Tibb Assist — Design Tokens
-   Warm, whimsical pregnancy-care design language
+   Restrained, professional pregnancy-care design language:
+   deep teal / cream / navy neutrals with sparing gold accents.
+   Saturated colour is reserved for risk status (GREEN/YELLOW/RED).
    ───────────────────────────────────────────────────────── */
 
 :root {
   /* ── Brand palette ─────────────────────────────────────── */
-  --teal-900:  #0b4f47;
-  --teal-700:  #147d70;
-  --teal-600:  #1a9484;
-  --teal-500:  #22a996;
-  --teal-400:  #4dc4b4;
-  --teal-200:  #b5e4db;
-  --teal-100:  #dff3ef;
-  --teal-50:   #f0faf7;
+  --teal-900:  #0F4C5C;
+  --teal-700:  #1A5F70;
+  --teal-600:  #227387;
+  --teal-500:  #2E88A0;
+  --teal-400:  #5BA9BC;
+  --teal-200:  #B5DCE5;
+  --teal-100:  #DCEEF3;
+  --teal-50:   #EEF7F9;
 
-  --amber-700: #8a6118;
-  --amber-600: #b8811f;
-  --amber-500: #e2a65d;
-  --amber-400: #edc07f;
-  --amber-200: #f7e1bd;
-  --amber-100: #fdf0da;
-  --amber-50:  #fef8ee;
+  --amber-700: #8C6510;
+  --amber-600: #B58214;
+  --amber-500: #D99A1B;
+  --amber-400: #E4B44E;
+  --amber-200: #F3DFA8;
+  --amber-100: #FAF0D2;
+  --amber-50:  #FDF8EA;
 
   --coral-500: #e07a6a;
   --coral-400: #e8988b;
@@ -48,18 +50,18 @@
   --risk-red-ring:  #f5b8b8;
 
   /* ── Neutrals ──────────────────────────────────────────── */
-  --bg-page:    #faf6f0;
+  --bg-page:    #F7FAF9;
   --bg-card:    #ffffff;
-  --bg-subtle:  #f3ede4;
-  --bg-input:   #fefcfa;
+  --bg-subtle:  #ECF2F3;
+  --bg-input:   #FBFDFD;
 
-  --border-soft:  #e6dfd4;
-  --border-input: #d9d1c4;
+  --border-soft:  #DDE8E6;
+  --border-input: #C7D6D3;
   --border-focus: var(--teal-700);
 
-  --text-primary:   #2d2a26;
-  --text-secondary: #6b6560;
-  --text-muted:     #9b9590;
+  --text-primary:   #12343B;
+  --text-secondary: #42585F;
+  --text-muted:     #5A7480;
   --text-inverse:   #ffffff;
 
   /* ── Typography ────────────────────────────────────────── */
@@ -95,6 +97,8 @@
   --space-16: 4rem;
 
   /* ── Radii ─────────────────────────────────────────────── */
+  /* Scale: controls (buttons/inputs) = sm · cards/panels = lg ·
+     feature panels (hero, result) = xl · badges/pills = full  */
   --radius-sm:  8px;
   --radius-md:  12px;
   --radius-lg:  16px;
@@ -103,13 +107,17 @@
   --radius-full: 999px;
 
   /* ── Shadows ───────────────────────────────────────────── */
-  --shadow-xs: 0 1px 2px rgba(45,42,38,0.04);
-  --shadow-sm: 0 2px 8px rgba(45,42,38,0.06);
-  --shadow-md: 0 4px 16px rgba(45,42,38,0.07);
-  --shadow-lg: 0 8px 32px rgba(45,42,38,0.08);
-  --shadow-xl: 0 16px 48px rgba(45,42,38,0.10);
-  --shadow-glow-teal: 0 4px 20px rgba(20,125,112,0.18);
-  --shadow-glow-amber: 0 4px 20px rgba(226,166,93,0.22);
+  /* Depth system: resting → hover → elevated (navy-tinted)  */
+  --shadow-xs: 0 1px 2px rgba(18,52,59,0.05);
+  --shadow-sm: 0 2px 8px rgba(18,52,59,0.07);
+  --shadow-md: 0 4px 16px rgba(18,52,59,0.10);
+  --shadow-lg: 0 8px 32px rgba(18,52,59,0.12);
+  --shadow-xl: 0 16px 48px rgba(18,52,59,0.14);
+  --shadow-rest:     var(--shadow-sm);
+  --shadow-hover:    var(--shadow-md);
+  --shadow-elevated: var(--shadow-lg);
+  --shadow-glow-teal:  0 4px 20px rgba(15,76,92,0.22);
+  --shadow-glow-amber: 0 4px 20px rgba(217,154,27,0.24);
 
   /* ── Transitions ───────────────────────────────────────── */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -119,8 +127,8 @@
   --duration-slow: 400ms;
 
   /* ── Gradients ─────────────────────────────────────────── */
-  --gradient-warm: linear-gradient(135deg, var(--teal-700), var(--teal-500) 40%, var(--amber-500));
-  --gradient-hero: linear-gradient(160deg, #f0faf7 0%, #fef8ee 50%, #fbeae7 100%);
+  --gradient-warm: linear-gradient(135deg, var(--teal-700), var(--teal-900) 70%);
+  --gradient-hero: linear-gradient(160deg, #EDF6F8 0%, #F7FAF9 55%, #FAF6EC 100%);
   --gradient-auth: linear-gradient(145deg, var(--teal-100), var(--amber-50) 60%, var(--coral-50));
   --gradient-card-warm: linear-gradient(135deg, var(--teal-50), var(--amber-50));
   --gradient-risk-green: linear-gradient(135deg, #e8f5ee, #dff3ea);

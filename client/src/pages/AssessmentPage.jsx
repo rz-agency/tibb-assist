@@ -6,7 +6,7 @@ import EmergencyPanel from '../components/EmergencyPanel'
 import { ShieldIcon, AlertIcon, HeartIcon } from '../components/Illustrations'
 
 const RISK_LABEL_KEY = { GREEN: 'assessment.riskGreen', YELLOW: 'assessment.riskYellow', RED: 'assessment.riskRed' }
-const RISK_ICONS = { GREEN: <ShieldIcon size={24} color="var(--risk-green-fg)" />, YELLOW: <AlertIcon size={24} color="var(--risk-amber-fg)" />, RED: <AlertIcon size={24} color="var(--risk-red-fg)" /> }
+const RISK_ICONS = { GREEN: <ShieldIcon size={24} color="var(--text-inverse)" />, YELLOW: <AlertIcon size={24} color="var(--text-inverse)" />, RED: <AlertIcon size={24} color="var(--text-inverse)" /> }
 
 const RESULT_CODE_MESSAGES = {
   PRETERM_LABOR_RISK: { explanationKey: 'assessment.pretermLaborRiskExplanation', actionKey: 'assessment.pretermLaborRiskAction' },
