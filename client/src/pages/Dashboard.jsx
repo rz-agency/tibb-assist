@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { getCareMissions, getCheckInDue, getPatientProfile, getReferrals, updatePatientProfile } from '../api/api'
 import EmergencyContacts from '../components/EmergencyContacts'
 import StatusMessage from '../components/StatusMessage'
-import { HeartIcon, ShieldIcon, AlertIcon } from '../components/Illustrations'
+import { HeartIcon, ShieldIcon, HistoryIcon, LocationIcon, PregnancyHeroIllustration } from '../components/Illustrations'
 
 const RISK_LABEL_KEY = { GREEN: 'assessment.riskGreen', YELLOW: 'assessment.riskYellow', RED: 'assessment.riskRed' }
 
@@ -11,6 +11,52 @@ const pregnancyStatusKey = {
   ACTIVE: 'dashboard.activePregnancy',
   COMPLETED: 'dashboard.completedPregnancy',
   LOST: 'dashboard.lostPregnancy',
+}
+
+function GaProgressRing({ week, remaining, t }) {
+  const TOTAL_WEEKS = 40
+  const clamped = Math.max(0, Math.min(week, TOTAL_WEEKS))
+  const radius = 92
+  const circumference = 2 * Math.PI * radius
+  const progress = clamped / TOTAL_WEEKS
+  const dashOffset = circumference * (1 - progress)
+  const gradientId = 'gaRingGradient'
+  const trimesterLabel = clamped < 14 ? 1 : clamped < 28 ? 2 : 3
+
+  return (
+    <div className="ga-ring" role="img" aria-label={t('dashboard.gaRingLabel', { week: clamped, defaultValue: `Week ${clamped} of ${TOTAL_WEEKS}` })}>
+      <svg viewBox="0 0 220 220" className="ga-ring-track" aria-hidden="true">
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="var(--teal-500)" />
+            <stop offset="100%" stopColor="var(--amber-500)" />
+          </linearGradient>
+        </defs>
+        <circle className="ga-ring-bg" cx="110" cy="110" r={radius} />
+        <circle className="ga-ring-track" cx="110" cy="110" r={radius} />
+        <circle
+          className="ga-ring-fill"
+          cx="110"
+          cy="110"
+          r={radius}
+          strokeDasharray={circumference}
+          strokeDashoffset={dashOffset}
+        />
+      </svg>
+      <div className="ga-ring-center">
+        <span className="ga-ring-week">{clamped}</span>
+        <span className="ga-ring-label">{t('dashboard.gaRingWeeks', { defaultValue: 'weeks' })}</span>
+        <span className="ga-ring-sub">
+          {remaining > 0
+            ? t('dashboard.gaRingRemaining', { weeks: remaining, defaultValue: `${remaining} to go` })
+            : t('dashboard.gaRingDue', { defaultValue: 'Baby is near' })}
+        </span>
+        <span className="ga-ring-sub" style={{ color: 'var(--teal-700)' }}>
+          {t('dashboard.gaRingTrimester', { trimester: trimesterLabel, defaultValue: `Trimester ${trimesterLabel}` })}
+        </span>
+      </div>
+    </div>
+  )
 }
 
 function Dashboard({ user, onNavigate }) {
@@ -119,7 +165,7 @@ function Dashboard({ user, onNavigate }) {
     <div className="space-y-8">
       {/* ── Hero section ─────────────────────────────────── */}
       <div className="hero-card flex flex-col-reverse items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <p className="eyebrow">{t('dashboard.yourCareSpace')}</p>
           <h1 className="page-title">
             {t('dashboard.greetingName', { defaultValue: `Hello, ${displayName}`, name: displayName })}
@@ -143,6 +189,13 @@ function Dashboard({ user, onNavigate }) {
               {pregnancy ? t('dashboard.viewPregnancy') : t('dashboard.addPregnancy')}
             </button>
           </div>
+        </div>
+        <div className="hero-illustration" aria-hidden="true">
+          {gaWeek != null ? (
+            <GaProgressRing week={gaWeek} remaining={remaining} t={t} />
+          ) : (
+            <PregnancyHeroIllustration />
+          )}
         </div>
       </div>
 
@@ -210,23 +263,23 @@ function Dashboard({ user, onNavigate }) {
       <div>
         <p className="eyebrow">{t('dashboard.todayActions', { defaultValue: 'Today' })}</p>
         <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <button className="action-card" onClick={() => onNavigate('assessment')}>
+          <button className="action-card action-card-rise" onClick={() => onNavigate('assessment')}>
             <span className="action-icon action-icon-gold"><ShieldIcon size={20} /></span>
             <strong>{t('dashboard.startAssessment')}</strong>
             <span className="text-sm">{t('dashboard.recordSymptoms')}</span>
           </button>
-          <button className="action-card" onClick={() => onNavigate('history')}>
-            <span className="action-icon">=</span>
+          <button className="action-card action-card-rise" onClick={() => onNavigate('history')}>
+            <span className="action-icon"><HistoryIcon size={20} /></span>
             <strong>{t('dashboard.assessmentHistory')}</strong>
             <span className="text-sm">{t('dashboard.reviewRecords')}</span>
           </button>
-          <button className="action-card" onClick={() => onNavigate('pregnancy')}>
+          <button className="action-card action-card-rise" onClick={() => onNavigate('pregnancy')}>
             <span className="action-icon"><HeartIcon size={20} /></span>
             <strong>{t('dashboard.pregnancyCardTitle')}</strong>
             <span className="text-sm">{t('dashboard.pregnancyCardDescription')}</span>
           </button>
-          <button className="action-card" onClick={() => onNavigate('nearby')}>
-            <span className="action-icon">&#9956;</span>
+          <button className="action-card action-card-rise" onClick={() => onNavigate('nearby')}>
+            <span className="action-icon"><LocationIcon size={20} /></span>
             <strong>{t('dashboard.nearbyCardTitle')}</strong>
             <span className="text-sm">{t('dashboard.nearbyCardDescription')}</span>
           </button>

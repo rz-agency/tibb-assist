@@ -36,7 +36,7 @@ function App() {
     }
   }
 
-  if (checkingSession) return <main className="auth-shell"><p className="text-slate-600">{t('layout.checkingSession')}</p></main>
+  if (checkingSession) return <main className="auth-shell"><p className="text-[var(--text-muted)]">{t('layout.checkingSession')}</p></main>
   if (!user) return showRegister ? <Register onLogin={setUser} onShowLogin={() => setShowRegister(false)} /> : <Login onLogin={setUser} onShowRegister={() => setShowRegister(true)} />
 
   const content = user.role === 'LHW'
