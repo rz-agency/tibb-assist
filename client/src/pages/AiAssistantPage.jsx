@@ -29,6 +29,7 @@ function AiAssistantPage({ user, onNavigate }) {
   const [aiExplanation, setAiExplanation] = useState('')
   const [notedSymptoms, setNotedSymptoms] = useState([])
   const [facilities, setFacilities] = useState([])
+  const [ageRiskNote, setAgeRiskNote] = useState(null)
   const [error, setError] = useState('')
   // Emergency intent: set when the AI detects an urgent help request in the
   // woman's message. UI trigger only — completely independent of the risk level.
@@ -254,6 +255,7 @@ function AiAssistantPage({ user, onNavigate }) {
       setAiExplanation(result.aiExplanation)
       setNotedSymptoms(result.notedSymptoms || [])
       setFacilities(result.facilities || [])
+      setAgeRiskNote(result.ageRiskNote || null)
       setPhase('result')
 
       setMessages((prev) => [
@@ -284,6 +286,7 @@ function AiAssistantPage({ user, onNavigate }) {
     setAiExplanation('')
     setNotedSymptoms([])
     setFacilities([])
+    setAgeRiskNote(null)
     setError('')
     setUrgentIntent(false)
   }
@@ -350,6 +353,7 @@ function AiAssistantPage({ user, onNavigate }) {
               user={user}
               onNavigate={onNavigate}
               onRestart={startNew}
+              ageRiskNote={ageRiskNote}
             />
           )}
 

@@ -159,6 +159,51 @@ html[dir="rtl"] select.form-input {
   background-position: left 14px center;
 }
 
+.form-error {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--risk-red-fg, #c0392b);
+  margin-top: 2px;
+}
+
+.form-hint {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Severity validation error states */
+.form-error-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  background: var(--risk-red-bg, #fef2f2);
+  border: 1px solid var(--risk-red-fg, #c0392b);
+  border-radius: var(--radius-md);
+  color: var(--risk-red-fg, #c0392b);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.form-input-error {
+  border-color: var(--risk-red-fg, #c0392b) !important;
+  box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.15);
+}
+
+.form-field-error {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--risk-red-fg, #c0392b);
+  margin-top: 4px;
+}
+
+.content-panel-error {
+  border-color: var(--risk-red-fg, #c0392b) !important;
+}
+
 /* ════════════════════════════════════════════════════════
    CARDS
    ════════════════════════════════════════════════════════ */
@@ -285,6 +330,27 @@ html[dir="rtl"] select.form-input {
 .risk-green  .risk-result-icon { background: var(--risk-green-fg); color: #fff; }
 .risk-yellow .risk-result-icon { background: var(--risk-amber-fg); color: #fff; }
 .risk-red    .risk-result-icon { background: var(--risk-red-fg);   color: #fff; }
+
+.age-risk-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--amber-50, #fffbeb);
+  border: 1px solid var(--amber-200, #fde68a);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.age-risk-note-icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  color: var(--amber-600, #d97706);
+}
 
 /* ════════════════════════════════════════════════════════
    EMERGENCY PANEL (RED result call actions)

@@ -92,6 +92,7 @@ function WeeklyCheckInPage({ user, onNavigate }) {
             facilities={result.facilities || []}
             user={user}
             onNavigate={onNavigate}
+            ageRiskNote={result.ageRiskNote || null}
           />
         </div>
       </div>

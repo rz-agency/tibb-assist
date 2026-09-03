@@ -128,6 +128,13 @@ model PatientProfile {
   fullName        String   @map("full_name") @db.VarChar(255)
   phone           String?  @db.VarChar(30)
   age             Int?
+  dateOfBirth     DateTime? @map("date_of_birth") @db.Date
+  address         String?  @db.VarChar(500)
+  bloodGroup      String?  @map("blood_group") @db.VarChar(5)
+  emergencyContactName     String? @map("emergency_contact_name") @db.VarChar(255)
+  emergencyContactPhone    String? @map("emergency_contact_phone") @db.VarChar(30)
+  emergencyContactRelation String? @map("emergency_contact_relation") @db.VarChar(100)
+  preferredLanguage        String  @default("ur") @map("preferred_language") @db.VarChar(5)
   villageOrArea   String?  @map("village_or_area") @db.VarChar(255)
   district        String?  @db.VarChar(255)
   province        String?  @db.VarChar(255)

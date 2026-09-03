@@ -14,6 +14,7 @@ import WeeklyCheckInPage from './pages/WeeklyCheckInPage'
 import CareMissionPage from './pages/CareMissionPage'
 import ReferralJourneyPage from './pages/ReferralJourneyPage'
 import NearbyFacilitiesPage from './pages/NearbyFacilitiesPage'
+import ProfilePage from './pages/ProfilePage'
 import './App.css'
 
 function App() {
@@ -63,7 +64,9 @@ function App() {
               ? <ReferralJourneyPage user={user} />
               : page === 'nearby'
                 ? <NearbyFacilitiesPage />
-                : <Dashboard user={user} onNavigate={setPage} />
+                : page === 'profile'
+                  ? <ProfilePage user={user} />
+                  : <Dashboard user={user} onNavigate={setPage} />
 
   return <AppLayout user={user} currentPage={page} onNavigate={setPage} onLogout={logout}>{content}</AppLayout>
 }

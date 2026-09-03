@@ -15,6 +15,8 @@ const qwenService = require('./qwenService')
 const { SUPPLEMENTARY_SYMPTOMS } = require('./qwenService')
 const { calculateRiskAssessment } = require('./riskAssessment')
 const { createCareMissionForAssessment } = require('./careMissionService')
+const { computeAgeRiskNote } = require('../controllers/profileController')
+const { sortFacilitiesByPatientLocation, getPatientLocation } = require('../controllers/facilityController')
 
 const answerStatuses = ['PRESENT', 'ABSENT', 'UNKNOWN']
 const severityLevels = ['MILD', 'MODERATE', 'SEVERE']
@@ -34,7 +36,7 @@ async function getSymptomCatalog() {
  * every caller gets identical behavior.
  *
  * @param {object} params
- * @param {{ id: number, assignedLhwId: number|null, pregnancies: Array<{ id: number }> }} params.patient
+ * @param {{ id: number, assignedLhwId: number|null, pregnancies: Array<{ id: number }>, dateOfBirth?: Date|null }} params.patient
  * @param {number} params.userId
  * @param {Array} params.extractedSymptoms
  * @returns {Promise<{ error: 'NO_VALID_SYMPTOMS' } |
@@ -197,7 +199,7 @@ async function createAssessmentFromExtractedSymptoms({ patient, userId, extracte
     aiExplanation = ''
   }
 
-  const facilities = await prisma.healthcareFacility.findMany({
+  const allFacilities = await prisma.healthcareFacility.findMany({
     select: {
       id: true,
       name: true,
@@ -209,6 +211,11 @@ async function createAssessmentFromExtractedSymptoms({ patient, userId, extracte
     orderBy: { name: 'asc' },
   })
 
+  const location = await getPatientLocation(userId)
+  const facilities = sortFacilitiesByPatientLocation(allFacilities, location)
+
+  const ageRiskNote = computeAgeRiskNote(patient.dateOfBirth)
+
   return {
     assessment,
     riskLevel: assessment.riskLevel,
@@ -216,6 +223,7 @@ async function createAssessmentFromExtractedSymptoms({ patient, userId, extracte
     aiExplanation,
     notedSymptoms,
     facilities,
+    ageRiskNote,
   }
 }
 

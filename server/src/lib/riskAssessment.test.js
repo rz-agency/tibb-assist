@@ -72,6 +72,12 @@ test('severe_headache PRESENT SEVERE → RED + emergency', () => {
   assert.equal(r.isEmergency, true)
 })
 
+test('severe_headache PRESENT (no severity) → YELLOW, not emergency', () => {
+  const r = calculateRiskAssessment([s('severe_headache', 'PRESENT')])
+  assert.equal(r.riskLevel, 'YELLOW')
+  assert.equal(r.isEmergency, false)
+})
+
 // ─── Abdominal pain ──────────────────────────────────────────────
 
 test('abdominal_pain ABSENT → GREEN', () => {
@@ -102,6 +108,12 @@ test('abdominal_pain PRESENT SEVERE → RED + emergency', () => {
   assert.equal(r.isEmergency, true)
 })
 
+test('abdominal_pain PRESENT (no severity) → YELLOW, not emergency', () => {
+  const r = calculateRiskAssessment([s('abdominal_pain', 'PRESENT')])
+  assert.equal(r.riskLevel, 'YELLOW')
+  assert.equal(r.isEmergency, false)
+})
+
 // ─── Fever ───────────────────────────────────────────────────────
 
 test('fever ABSENT → GREEN', () => {
@@ -130,6 +142,12 @@ test('fever PRESENT SEVERE → RED + emergency', () => {
   const r = calculateRiskAssessment([s('fever', 'PRESENT', 'SEVERE')])
   assert.equal(r.riskLevel, 'RED')
   assert.equal(r.isEmergency, true)
+})
+
+test('fever PRESENT (no severity) → YELLOW, not emergency', () => {
+  const r = calculateRiskAssessment([s('fever', 'PRESENT')])
+  assert.equal(r.riskLevel, 'YELLOW')
+  assert.equal(r.isEmergency, false)
 })
 
 // ─── Blurred vision (always-RED, always-emergency) ──────────────
@@ -220,6 +238,12 @@ test('breathing_difficulty PRESENT SEVERE → RED + emergency', () => {
   const r = calculateRiskAssessment([s('breathing_difficulty', 'PRESENT', 'SEVERE')])
   assert.equal(r.riskLevel, 'RED')
   assert.equal(r.isEmergency, true)
+})
+
+test('breathing_difficulty PRESENT (no severity) → YELLOW, not emergency', () => {
+  const r = calculateRiskAssessment([s('breathing_difficulty', 'PRESENT')])
+  assert.equal(r.riskLevel, 'YELLOW')
+  assert.equal(r.isEmergency, false)
 })
 
 // ─── Unknown / unlisted symptoms ────────────────────────────────

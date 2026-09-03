@@ -22,6 +22,7 @@ function AppLayout({ user, currentPage, onNavigate, onLogout, children }) {
         ['assessment', t('layout.navNewAssessment')],
         ['history', t('layout.navHistory')],
         ['nearby', t('layout.navNearby')],
+        ['profile', t('layout.navProfile')],
       ]
 
   return (

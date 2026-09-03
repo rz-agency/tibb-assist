@@ -34,6 +34,7 @@
     "navCareMissions": "دیکھ بھال مشن",
         "navReferrals": "ریفرلز",
     "navNearby": "قریبی مدد",
+    "navProfile": "پروفائل",
     "checkingSession": "آپ کا سیشن چیک ہو رہا ہے..."
   },
   "common": {
@@ -44,7 +45,8 @@
     "profileUpdated": "پروفائل اپ ڈیٹ ہو گئی۔",
     "edit": "ترمیم",
     "optional": "(اختیاری)",
-    "notRecorded": "درج نہیں"
+    "notRecorded": "درج نہیں",
+    "required": "(ضروری)"
   },
   "assessment": {
     "entryTitle": "جائزہ اندراج",
@@ -69,6 +71,8 @@
     "moderate": "درمیانی",
     "severe": "شدید",
     "saveAssessment": "جائزہ محفوظ کریں",
+    "severityRequired": "براہ کرم شدت کی سطح منتخب کریں",
+    "severityRequiredSummary": "براہ کرم تمام علامات جنہیں موجود کے طور پر نشان زد کیا ہے ان کے لیے شدت کی سطح منتخب کریں۔",
     "resultEyebrow": "جائزے کا نتیجہ",
     "assessmentCompleted": "جائزہ مکمل",
     "riskLevel": "خطرے کی سطح",
@@ -103,6 +107,8 @@
     "pretermLaborRiskAction": "فوری طور پر قریب ترین ہسپتال جائیں یا اپنے ڈاکٹر کو کال کریں۔ انتظار نہ کریں۔",
     "posttermPregnancyExplanation": "آپ کا حمل 42 ہفتوں سے زیادہ ہو چکا ہے۔ تاخیر شدہ حمل آپ اور بچے دونوں کے لیے زیادہ خطرہ رکھتا ہے۔",
     "posttermPregnancyAction": "براہ کرم جلد از جلد اپنے ڈاکٹر یا دائی سے رابطہ کریں تاکہ اگلے اقدامات پر بات ہو سکے۔",
+    "ageRiskNoteAdvanced": "زیادہ عمر (35+) — اضافی نگرانی کی سفارش",
+    "ageRiskNoteAdolescent": "نوعمر حمل (18 سے کم) — اضافی نگرانی کی سفارش",
     "stepSymptoms": "علامات",
     "stepReview": "جائزہ",
     "stepResult": "نتیجہ"
@@ -359,6 +365,42 @@
     "FOLLOW_UP_DUE": "فالو اپ مقرر",
     "CLOSED": "بند",
     "CANCELLED": "منسوخ"
+  }
+,
+  "profile": {
+    "eyebrow": "آپ کی پروفائل",
+    "pageTitle": "ذاتی معلومات",
+    "subtitle": "اپنی ذاتی اور ہنگامی رابطے کی معلومات اپ ٹو ڈیٹ رکھیں۔",
+    "loading": "پروفائل لوڈ ہو رہی ہے...",
+    "notFound": "پروفائل نہیں ملی۔",
+    "editTitle": "پروفائل میں ترمیم",
+    "phoneLabel": "فون",
+    "dobLabel": "تاریخ پیدائش",
+    "bloodGroupLabel": "بلڈ گروپ",
+    "languageLabel": "ترجیحی زبان",
+    "addressLabel": "پتہ",
+    "ageDisplay": "عمر: {{age}}",
+    "agePreview": "عمر: {{age}}",
+    "urdu": "اردو",
+    "english": "انگریزی",
+    "emergencyContactSection": "ہنگامی رابطہ",
+    "ecName": "نام",
+    "ecPhone": "فون",
+    "ecRelation": "رشتہ",
+    "formFullName": "پورا نام",
+    "formPhone": "فون",
+    "formDob": "تاریخ پیدائش",
+    "formBloodGroup": "بلڈ گروپ",
+    "formLanguage": "ترجیحی زبان",
+    "formAddress": "پتہ",
+    "formEcName": "ہنگامی رابطے کا نام",
+    "formEcPhone": "ہنگامی رابطے کا فون",
+    "formEcRelation": "رشتہ",
+    "selectBloodGroup": "منتخب کریں...",
+    "fullNameRequired": "پورا نام ضروری ہے۔",
+    "invalidPhone": "درست پاکستانی نمبر درج کریں (03XXXXXXXXX یا +92XXXXXXXXXX)۔",
+    "ageOutOfRange": "عمر 12 سے 60 سال کے درمیان ہونی چاہیے۔",
+    "invalidBloodGroup": "براہ کرم درست بلڈ گروپ منتخب کریں۔"
   }
 ,
   "checkIn": {

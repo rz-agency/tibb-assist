@@ -143,6 +143,22 @@ async function main() {
     },
   })
 
+  // ── Additional healthcare facilities across Pakistan ──────────────
+  const extraFacilities = [
+    { name: 'DHQ Hospital - Lahore', facilityType: 'HOSPITAL', city: 'Lahore', address: 'Hospital Road, Lahore', phone: '+924299211100', latitude: 31.5497, longitude: 74.3436 },
+    { name: 'Civil Hospital - Karachi', facilityType: 'HOSPITAL', city: 'Karachi', address: 'Mission Road, Karachi', phone: '+922199215100', latitude: 24.8607, longitude: 67.0011 },
+    { name: 'Rural Health Center - Multan', facilityType: 'HEALTH_CENTER', city: 'Multan', address: 'Rural Health Road, Multan', phone: '+92619201234', latitude: 30.1575, longitude: 71.5249 },
+    { name: 'Basic Health Unit - Peshawar', facilityType: 'HEALTH_CENTER', city: 'Peshawar', address: 'University Road, Peshawar', phone: '+92919210234', latitude: 34.0151, longitude: 71.5249 },
+    { name: 'Combined Military Hospital - Quetta', facilityType: 'HOSPITAL', city: 'Quetta', address: 'CMH Road, Quetta', phone: '+92819201234', latitude: 30.1798, longitude: 66.9750 },
+  ]
+
+  for (const f of extraFacilities) {
+    const existing = await prisma.healthcareFacility.findFirst({ where: { name: f.name } })
+    if (!existing) {
+      await prisma.healthcareFacility.create({ data: { ...f, isVerified: true } })
+    }
+  }
+
   const emergencyContact = await prisma.emergencyContact.create({
     data: {
       patientId: patient.id,

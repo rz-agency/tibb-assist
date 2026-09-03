@@ -90,7 +90,15 @@ function evaluateSymptom(code, answerStatus, severity) {
   } else if (answerStatus === 'PRESENT') {
     // Severity-sensitive rules look up MILD/MODERATE/SEVERE;
     // always-RED rules (blurred vision, etc.) use the PRESENT key.
-    riskLevel = (severity && rule[severity]) || rule.PRESENT || 'RED'
+    // When severity is missing for a severity-graded rule (no PRESENT key),
+    // treat as YELLOW — same as UNKNOWN answerStatus.
+    if (severity && rule[severity]) {
+      riskLevel = rule[severity]
+    } else if (rule.PRESENT) {
+      riskLevel = rule.PRESENT
+    } else {
+      riskLevel = 'YELLOW'
+    }
   } else {
     riskLevel = 'GREEN'
   }
@@ -103,6 +111,9 @@ function evaluateSymptom(code, answerStatus, severity) {
   return { riskLevel, isEmergency }
 }
 
+// NOTE: severe_abdominal_pain is currently a binary labor-sign trigger only — it is not
+// independently severity-graded like other warning signs outside of preterm-labor
+// context. Documented as future work.
 // Symptom codes representing pain, contractions, or fluid leak.
 // When any of these are PRESENT in a preterm pregnancy the risk engine
 // forces RED with reason "preterm_labor_risk".

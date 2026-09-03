@@ -11,7 +11,7 @@ function parsePositiveInteger(value) {
 async function getPatientForUser(userId) {
   return prisma.patientProfile.findUnique({
     where: { userId },
-    select: { id: true, assignedLhwId: true, pregnancies: { where: { pregnancyStatus: 'ACTIVE' }, select: { id: true } } },
+    select: { id: true, assignedLhwId: true, dateOfBirth: true, pregnancies: { where: { pregnancyStatus: 'ACTIVE' }, select: { id: true } } },
   })
 }
 

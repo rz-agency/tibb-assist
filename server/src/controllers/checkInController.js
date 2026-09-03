@@ -16,6 +16,7 @@ async function getCheckInContext(userId) {
     select: {
       id: true,
       assignedLhwId: true,
+      dateOfBirth: true,
       pregnancies: {
         where: { pregnancyStatus: 'ACTIVE' },
         select: { id: true, lmpDate: true },

@@ -34,6 +34,7 @@
     "navCareMissions": "Care Missions",
         "navReferrals": "Referrals",
     "navNearby": "Nearby help",
+    "navProfile": "Profile",
     "checkingSession": "Checking your session..."
   },
   "common": {
@@ -44,7 +45,8 @@
     "profileUpdated": "Profile updated.",
     "edit": "Edit",
     "optional": "(optional)",
-    "notRecorded": "Not recorded"
+    "notRecorded": "Not recorded",
+    "required": "(required)"
   },
   "assessment": {
     "entryTitle": "Assessment entry",
@@ -69,6 +71,8 @@
     "moderate": "Moderate",
     "severe": "Severe",
     "saveAssessment": "Save assessment",
+    "severityRequired": "Please select a severity level",
+    "severityRequiredSummary": "Please select a severity level for all symptoms marked as present.",
     "resultEyebrow": "Assessment result",
     "assessmentCompleted": "Assessment completed",
     "riskLevel": "Risk level",
@@ -103,6 +107,8 @@
     "pretermLaborRiskAction": "Go to the nearest hospital or call your doctor immediately. Do not wait.",
     "posttermPregnancyExplanation": "Your pregnancy is past 42 weeks. Overdue pregnancies carry higher risk for you and the baby.",
     "posttermPregnancyAction": "Please contact your doctor or midwife as soon as possible to discuss next steps.",
+    "ageRiskNoteAdvanced": "Advanced maternal age (35+) — additional monitoring advised",
+    "ageRiskNoteAdolescent": "Adolescent pregnancy (<18) — additional monitoring advised",
     "stepSymptoms": "Symptoms",
     "stepReview": "Review",
     "stepResult": "Result"
@@ -359,6 +365,42 @@
     "FOLLOW_UP_DUE": "Follow-Up Due",
     "CLOSED": "Closed",
     "CANCELLED": "Cancelled"
+  }
+,
+  "profile": {
+    "eyebrow": "Your profile",
+    "pageTitle": "Personal information",
+    "subtitle": "Keep your personal and emergency contact details up to date.",
+    "loading": "Loading profile...",
+    "notFound": "Profile not found.",
+    "editTitle": "Edit profile",
+    "phoneLabel": "Phone",
+    "dobLabel": "Date of birth",
+    "bloodGroupLabel": "Blood group",
+    "languageLabel": "Preferred language",
+    "addressLabel": "Address",
+    "ageDisplay": "Age: {{age}}",
+    "agePreview": "Age: {{age}}",
+    "urdu": "Urdu",
+    "english": "English",
+    "emergencyContactSection": "Emergency contact",
+    "ecName": "Name",
+    "ecPhone": "Phone",
+    "ecRelation": "Relationship",
+    "formFullName": "Full name",
+    "formPhone": "Phone",
+    "formDob": "Date of birth",
+    "formBloodGroup": "Blood group",
+    "formLanguage": "Preferred language",
+    "formAddress": "Address",
+    "formEcName": "Emergency contact name",
+    "formEcPhone": "Emergency contact phone",
+    "formEcRelation": "Relationship",
+    "selectBloodGroup": "Select...",
+    "fullNameRequired": "Full name is required.",
+    "invalidPhone": "Enter a valid Pakistani number (03XXXXXXXXX or +92XXXXXXXXXX).",
+    "ageOutOfRange": "Age must be between 12 and 60 years.",
+    "invalidBloodGroup": "Please select a valid blood group."
   }
 ,
   "checkIn": {

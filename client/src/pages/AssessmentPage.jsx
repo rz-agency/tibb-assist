@@ -45,6 +45,7 @@ function AssessmentPage({ user, onNavigate }) {
   const [pregnancies, setPregnancies] = useState([])
   const [selectedPregnancyId, setSelectedPregnancyId] = useState('')
   const [completedAssessment, setCompletedAssessment] = useState(null)
+  const [ageRiskNote, setAgeRiskNote] = useState(null)
   const [facilities, setFacilities] = useState([])
   const [facilityLoading, setFacilityLoading] = useState(false)
   const [facilityError, setFacilityError] = useState('')
@@ -56,6 +57,8 @@ function AssessmentPage({ user, onNavigate }) {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [severityErrors, setSeverityErrors] = useState(new Set())
+  const [validationError, setValidationError] = useState('')
 
   useEffect(() => {
     const loadAssessmentForm = async () => {
@@ -79,11 +82,31 @@ function AssessmentPage({ user, onNavigate }) {
 
   const updateAnswer = (symptomId, field, value) => {
     setAnswers({ ...answers, [symptomId]: { ...answers[symptomId], [field]: value } })
+    // Clear severity error when user changes answerStatus or severity
+    if (severityErrors.has(symptomId)) {
+      const next = new Set(severityErrors)
+      next.delete(symptomId)
+      setSeverityErrors(next)
+    }
+    setValidationError('')
   }
 
   const submit = async (event) => {
     event.preventDefault()
     setError('')
+    setValidationError('')
+    setSeverityErrors(new Set())
+
+    // Validate: all PRESENT symptoms must have severity selected
+    const missingSeverity = symptoms.filter(
+      (symptom) => answers[symptom.id]?.answerStatus === 'PRESENT' && !answers[symptom.id]?.severity
+    )
+    if (missingSeverity.length > 0) {
+      setSeverityErrors(new Set(missingSeverity.map((s) => s.id)))
+      setValidationError(t('assessment.severityRequiredSummary'))
+      return
+    }
+
     setSubmitting(true)
     try {
       const result = await createAssessment({
@@ -97,6 +120,7 @@ function AssessmentPage({ user, onNavigate }) {
         })),
       })
       setCompletedAssessment(result.assessment)
+      setAgeRiskNote(result.ageRiskNote || null)
       setFacilityLoading(true)
       getFacilities().then((facilityResult) => {
         setFacilities(facilityResult.facilities)
@@ -174,6 +198,13 @@ function AssessmentPage({ user, onNavigate }) {
             </p>
           </div>
         </div>
+
+        {ageRiskNote && (
+          <div className="age-risk-note">
+            <svg className="age-risk-note-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.168 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
+            <span>{ageRiskNote}</span>
+          </div>
+        )}
 
         {completedAssessment.riskLevel === 'RED' && (
           <EmergencyPanel user={user} assessmentId={completedAssessment.id} onNavigate={onNavigate} />
@@ -281,32 +312,47 @@ function AssessmentPage({ user, onNavigate }) {
 
       {!loading && !error && symptoms.length > 0 && (
         <form onSubmit={submit}>
+          {validationError && (
+            <div className="form-error-summary">
+              <AlertIcon size={16} />
+              <span>{validationError}</span>
+            </div>
+          )}
           <div className="space-y-3">
-            {symptoms.map((symptom, idx) => (
-              <div className="content-panel" key={symptom.id}>
-                <div className="flex items-center gap-3">
-                  <span className="step-dot step-dot-active" style={{ width: 28, height: 28, fontSize: 'var(--text-xs)' }}>{idx + 1}</span>
-                  <p className="font-semibold text-[var(--text-primary)]">{symptom.name}</p>
+            {symptoms.map((symptom, idx) => {
+              const isPresent = answers[symptom.id]?.answerStatus === 'PRESENT'
+              const hasSeverityError = severityErrors.has(symptom.id)
+              return (
+                <div className={`content-panel ${hasSeverityError ? 'content-panel-error' : ''}`} key={symptom.id}>
+                  <div className="flex items-center gap-3">
+                    <span className="step-dot step-dot-active" style={{ width: 28, height: 28, fontSize: 'var(--text-xs)' }}>{idx + 1}</span>
+                    <p className="font-semibold text-[var(--text-primary)]">{symptom.name}</p>
+                  </div>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <label className="form-label">{t('assessment.answer')}
+                      <select className="form-input" value={answers[symptom.id]?.answerStatus || 'UNKNOWN'} onChange={(event) => updateAnswer(symptom.id, 'answerStatus', event.target.value)}>
+                        <option value="UNKNOWN">{t('assessment.unknown')}</option>
+                        <option value="PRESENT">{t('assessment.present')}</option>
+                        <option value="ABSENT">{t('assessment.absent')}</option>
+                      </select>
+                    </label>
+                    <label className="form-label">
+                      {t('assessment.severity')}{' '}
+                      <span className={`font-normal ${isPresent ? 'text-[var(--danger)]' : 'text-[var(--text-muted)]'}`}>
+                        {isPresent ? t('common.required') : t('common.optional')}
+                      </span>
+                      <select className={`form-input ${hasSeverityError ? 'form-input-error' : ''}`} value={answers[symptom.id]?.severity || ''} onChange={(event) => updateAnswer(symptom.id, 'severity', event.target.value)}>
+                        <option value="">{t('common.notRecorded')}</option>
+                        <option value="MILD">{t('assessment.mild')}</option>
+                        <option value="MODERATE">{t('assessment.moderate')}</option>
+                        <option value="SEVERE">{t('assessment.severe')}</option>
+                      </select>
+                      {hasSeverityError && <span className="form-field-error">{t('assessment.severityRequired')}</span>}
+                    </label>
+                  </div>
                 </div>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <label className="form-label">{t('assessment.answer')}
-                    <select className="form-input" value={answers[symptom.id]?.answerStatus || 'UNKNOWN'} onChange={(event) => updateAnswer(symptom.id, 'answerStatus', event.target.value)}>
-                      <option value="UNKNOWN">{t('assessment.unknown')}</option>
-                      <option value="PRESENT">{t('assessment.present')}</option>
-                      <option value="ABSENT">{t('assessment.absent')}</option>
-                    </select>
-                  </label>
-                  <label className="form-label">{t('assessment.severity')} <span className="font-normal text-[var(--text-muted)]">{t('common.optional')}</span>
-                    <select className="form-input" value={answers[symptom.id]?.severity || ''} onChange={(event) => updateAnswer(symptom.id, 'severity', event.target.value)}>
-                      <option value="">{t('common.notRecorded')}</option>
-                      <option value="MILD">{t('assessment.mild')}</option>
-                      <option value="MODERATE">{t('assessment.moderate')}</option>
-                      <option value="SEVERE">{t('assessment.severe')}</option>
-                    </select>
-                  </label>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
           <button className="button-primary mt-6" disabled={submitting}>
             {submitting ? t('common.saving') : t('assessment.saveAssessment')}

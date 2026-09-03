@@ -2,6 +2,7 @@ const prisma = require('../lib/prisma')
 const { calculateRiskAssessment } = require('../lib/riskAssessment')
 const { createCareMissionForAssessment } = require('../lib/careMissionService')
 const { getGestationalWeeks } = require('../lib/gestationalAge')
+const { computeAgeRiskNote } = require('./profileController')
 
 const inputMethods = ['VISUAL', 'VOICE', 'OTHER']
 const answerStatuses = ['PRESENT', 'ABSENT', 'UNKNOWN']
@@ -128,7 +129,11 @@ function validateSymptoms(symptoms) {
     if (!isOneOf(symptom.answerStatus, answerStatuses)) {
       return 'Each symptom must have a valid answerStatus.'
     }
-    if (symptom.severity !== undefined && symptom.severity !== null && !isOneOf(symptom.severity, severityLevels)) {
+    // PRESENT symptoms must have severity specified (safety net for frontend validation)
+    if (symptom.answerStatus === 'PRESENT' && (symptom.severity === undefined || symptom.severity === null || symptom.severity === '')) {
+      return 'Symptoms marked as PRESENT must have a severity level (MILD, MODERATE, or SEVERE).'
+    }
+    if (symptom.severity !== undefined && symptom.severity !== null && symptom.severity !== '' && !isOneOf(symptom.severity, severityLevels)) {
       return 'Each symptom severity must be MILD, MODERATE, or SEVERE.'
     }
     if (symptom.notes !== undefined && symptom.notes !== null && typeof symptom.notes !== 'string') {
@@ -170,7 +175,7 @@ async function createAssessment(req, res) {
 
     const patient = await prisma.patientProfile.findFirst({
       where: { id: patientId, ...accessFilter },
-      select: { id: true, assignedLhwId: true },
+      select: { id: true, assignedLhwId: true, dateOfBirth: true },
     })
 
     if (!patient) {
@@ -250,7 +255,9 @@ async function createAssessment(req, res) {
       return created
     })
 
-    return res.status(201).json({ assessment })
+    const ageRiskNote = computeAgeRiskNote(patient.dateOfBirth)
+
+    return res.status(201).json({ assessment, ageRiskNote })
   } catch (error) {
     return handleDatabaseError(error, res)
   }
