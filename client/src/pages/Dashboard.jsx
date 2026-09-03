@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getCareMissions, getPatientProfile, getReferrals, updatePatientProfile } from '../api/api'
+import { getCareMissions, getCheckInDue, getPatientProfile, getReferrals, updatePatientProfile } from '../api/api'
 import EmergencyContacts from '../components/EmergencyContacts'
 import StatusMessage from '../components/StatusMessage'
 import { HeartIcon, ShieldIcon, AlertIcon } from '../components/Illustrations'
@@ -31,6 +31,10 @@ function Dashboard({ user, onNavigate }) {
   const [careMissions, setCareMissions] = useState([])
   const [careMissionsLoading, setCareMissionsLoading] = useState(true)
   const [careMissionsError, setCareMissionsError] = useState('')
+  // Weekly check-in reminder — purely reactive (fetched on page load), never a
+  // push notification. Dismissal lasts only for the current visit.
+  const [checkInDue, setCheckInDue] = useState(null)
+  const [checkInBannerDismissed, setCheckInBannerDismissed] = useState(false)
 
   useEffect(() => {
     getPatientProfile(user.id)
@@ -57,6 +61,9 @@ function Dashboard({ user, onNavigate }) {
       .then((result) => setCareMissions(result.careMissions))
       .catch((requestError) => setCareMissionsError(requestError.message))
       .finally(() => setCareMissionsLoading(false))
+    getCheckInDue()
+      .then((data) => setCheckInDue(data))
+      .catch(() => setCheckInDue({ due: false }))
   }, [user.id])
 
   const updateProfileField = (event) => {
@@ -138,6 +145,24 @@ function Dashboard({ user, onNavigate }) {
           </div>
         </div>
       </div>
+
+      {/* ── Weekly check-in reminder (reactive, dismissible per visit) ── */}
+      {checkInDue?.due && !checkInBannerDismissed && (
+        <div className="checkin-banner">
+          <p className="checkin-banner-text">{t('checkIn.bannerText', { week: checkInDue.gestationalWeek })}</p>
+          <div className="checkin-banner-actions">
+            <button className="button-primary" onClick={() => onNavigate('checkin')}>{t('checkIn.bannerAction')}</button>
+            <button
+              className="checkin-banner-dismiss"
+              onClick={() => setCheckInBannerDismissed(true)}
+              aria-label={t('checkIn.bannerDismiss')}
+              type="button"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Profile strip ────────────────────────────────── */}
       <section className="profile-strip">

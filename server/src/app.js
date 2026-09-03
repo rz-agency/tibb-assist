@@ -13,6 +13,7 @@ const emergencyContactRoutes = require('./routes/emergencyContactRoutes')
 const patientRoutes = require('./routes/patientRoutes')
 const aiAssistantRoutes = require('./routes/aiAssistantRoutes')
 const careMissionRoutes = require('./routes/careMissionRoutes')
+const checkInRoutes = require('./routes/checkInRoutes')
 
 const app = express()
 
@@ -39,6 +40,7 @@ app.use('/api', emergencyContactRoutes)
 app.use('/api', patientRoutes)
 app.use('/api', aiAssistantRoutes)
 app.use('/api', careMissionRoutes)
+app.use('/api', checkInRoutes)
 
 app.get('/api/health', (req, res) => {
   res.json({

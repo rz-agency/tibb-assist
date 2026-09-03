@@ -82,10 +82,27 @@ function calculateDueDate(lmpDate) {
   return new Date(lmp.getTime() + 280 * MS_PER_DAY)
 }
 
+/**
+ * Decorate a pregnancy record with computed gestational-age fields.
+ * The week is always derived live from lmpDate — never from the stored
+ * gestationalWeek column, which can be null (never entered) or stale
+ * (entered weeks ago and never updated).
+ * Returns a new object (does not mutate the original).
+ */
+function decoratePregnancy(pregnancy) {
+  const gestationalWeeks = getGestationalWeeks(pregnancy.lmpDate)
+  return {
+    ...pregnancy,
+    gestationalWeeks,
+    isPostterm: gestationalWeeks != null ? isPostterm(gestationalWeeks) : null,
+  }
+}
+
 module.exports = {
   getGestationalWeeks,
   isPreterm,
   isPostterm,
   calculateDueDate,
   toUTCDate,
+  decoratePregnancy,
 }

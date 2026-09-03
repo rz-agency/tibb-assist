@@ -1,5 +1,5 @@
 const prisma = require('../lib/prisma')
-const { calculateDueDate, getGestationalWeeks, isPostterm } = require('../lib/gestationalAge')
+const { calculateDueDate, decoratePregnancy } = require('../lib/gestationalAge')
 
 const pregnancyStatuses = ['ACTIVE', 'COMPLETED', 'UNKNOWN']
 
@@ -67,19 +67,6 @@ async function getWomanPatient(userId) {
     where: { userId },
     select: { id: true },
   })
-}
-
-/**
- * Decorate a pregnancy record with computed gestational-age fields.
- * Returns a new object (does not mutate the original).
- */
-function decoratePregnancy(pregnancy) {
-  const gestationalWeeks = getGestationalWeeks(pregnancy.lmpDate)
-  return {
-    ...pregnancy,
-    gestationalWeeks,
-    isPostterm: gestationalWeeks != null ? isPostterm(gestationalWeeks) : null,
-  }
 }
 
 async function listPregnancies(req, res) {

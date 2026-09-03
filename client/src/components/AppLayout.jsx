@@ -17,6 +17,7 @@ function AppLayout({ user, currentPage, onNavigate, onLogout, children }) {
         ['care-missions', t('layout.navCareMissions')],
         ['referrals', t('layout.navReferrals')],
         ['pregnancy', t('layout.navPregnancy')],
+        ['checkin', t('layout.navCheckIn')],
         ['assessment', t('layout.navNewAssessment')],
         ['history', t('layout.navHistory')],
         ['nearby', t('layout.navNearby')],

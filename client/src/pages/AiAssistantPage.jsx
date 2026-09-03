@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { confirmAiAssessment, createReferral, sendAiMessage } from '../api/api'
+import { confirmAiAssessment, sendAiMessage } from '../api/api'
 import StatusMessage from '../components/StatusMessage'
 import EmergencyPanel from '../components/EmergencyPanel'
+import AssessmentResultSection from '../components/AssessmentResultSection'
 
 const RISK_LABEL_KEY = { GREEN: 'assessment.riskGreen', YELLOW: 'assessment.riskYellow', RED: 'assessment.riskRed' }
 
@@ -12,11 +13,6 @@ function getSpeechLang(i18nLang) {
   if (i18nLang === 'ur') return 'ur-PK'
   if (i18nLang === 'en') return 'en-US'
   return i18nLang
-}
-
-function cleanSymptomLabel(name) {
-  const cleaned = name.replace(/^(Severe|Heavy)\s+/i, '').trim()
-  return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : cleaned
 }
 
 function AiAssistantPage({ user, onNavigate }) {
@@ -33,11 +29,6 @@ function AiAssistantPage({ user, onNavigate }) {
   const [aiExplanation, setAiExplanation] = useState('')
   const [notedSymptoms, setNotedSymptoms] = useState([])
   const [facilities, setFacilities] = useState([])
-  const [selectedFacilityId, setSelectedFacilityId] = useState('')
-  const [referralNotes, setReferralNotes] = useState('')
-  const [referralSubmitting, setReferralSubmitting] = useState(false)
-  const [referralSuccess, setReferralSuccess] = useState('')
-  const [referralError, setReferralError] = useState('')
   const [error, setError] = useState('')
   // Emergency intent: set when the AI detects an urgent help request in the
   // woman's message. UI trigger only — completely independent of the risk level.
@@ -50,7 +41,6 @@ function AiAssistantPage({ user, onNavigate }) {
   const messagesEndRef = useRef(null)
   const messagesContainerRef = useRef(null)
   const confirmSectionRef = useRef(null)
-  const resultSectionRef = useRef(null)
   const inputRef = useRef(null)
 
   const greetingShown = useRef(false)
@@ -264,9 +254,6 @@ function AiAssistantPage({ user, onNavigate }) {
       setAiExplanation(result.aiExplanation)
       setNotedSymptoms(result.notedSymptoms || [])
       setFacilities(result.facilities || [])
-      if (result.facilities?.length > 0) {
-        setSelectedFacilityId(result.facilities[0].id)
-      }
       setPhase('result')
 
       setMessages((prev) => [
@@ -288,25 +275,6 @@ function AiAssistantPage({ user, onNavigate }) {
     ])
   }
 
-  const submitReferral = async (event) => {
-    event.preventDefault()
-    setReferralError('')
-    setReferralSuccess('')
-    setReferralSubmitting(true)
-    try {
-      await createReferral({
-        assessmentId: assessment.id,
-        facilityId: Number(selectedFacilityId),
-        notes: referralNotes || null,
-      })
-      setReferralSuccess(t('assessment.referralSuccess'))
-    } catch (requestError) {
-      setReferralError(requestError.message)
-    } finally {
-      setReferralSubmitting(false)
-    }
-  }
-
   const startNew = () => {
     setMessages([{ role: 'assistant', content: t('ai.greeting'), type: 'text' }])
     setPhase('idle')
@@ -316,8 +284,6 @@ function AiAssistantPage({ user, onNavigate }) {
     setAiExplanation('')
     setNotedSymptoms([])
     setFacilities([])
-    setReferralSuccess('')
-    setReferralError('')
     setError('')
     setUrgentIntent(false)
   }
@@ -376,77 +342,16 @@ function AiAssistantPage({ user, onNavigate }) {
           )}
 
           {showResult && (
-            <div className="ai-result-section" ref={resultSectionRef}>
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="detail-label">{t('assessment.riskLevel')}</p>
-                <span className={`risk-${assessment.riskLevel.toLowerCase()}`}>{t(RISK_LABEL_KEY[assessment.riskLevel])}</span>
-              </div>
-              <p className="text-xs text-[var(--text-muted)]">{t('assessment.calculatedFromAnswers')}</p>
-            </div>
-            {aiExplanation && <p className="mt-4 text-[var(--text-secondary)]">{aiExplanation}</p>}
-            {assessment.pregnancy && <p className="mt-3 text-sm text-[var(--text-muted)]">{t('assessment.linkedPregnancy')} {assessment.pregnancy.pregnancyStatus}</p>}
-
-            {assessment.riskLevel === 'RED' && (
-              <EmergencyPanel user={user} assessmentId={assessment.id} onNavigate={onNavigate} />
-            )}
-
-            <div className="mt-6 border-t border-[var(--border-soft)] pt-5">
-              <h2 className="font-semibold text-[var(--text-primary)]">{t('assessment.recordedAnswers')}</h2>
-              <ul className="mt-3 space-y-2">
-                {assessment.assessmentSymptoms.filter((s) => s.answerStatus !== 'UNKNOWN').map((item) => (
-                  <li className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-subtle)] px-3 py-2 text-sm" key={item.id}>
-                    <span className="font-medium text-[var(--text-primary)]">{cleanSymptomLabel(item.symptom.name)}</span>
-                    <span className="ms-2 text-[var(--text-muted)]">{item.answerStatus}{item.severity ? ` · ${item.severity}` : ''}</span>
-                  </li>
-                ))}
-              </ul>
-              {notedSymptoms.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-sm font-medium text-[var(--text-secondary)]">{t('assessment.notedSymptoms')}</h3>
-                  <p className="mt-1 text-xs text-[var(--text-muted)]">{t('assessment.notedDisclaimer')}</p>
-                  <ul className="mt-2 space-y-1">
-                    {notedSymptoms.filter((s) => s.answerStatus !== 'UNKNOWN').map((s, i) => (
-                      <li className="rounded-lg bg-[var(--amber-50)] border border-[var(--amber-200)] px-3 py-2 text-sm" key={i}>
-                        <span className="font-medium">{s.name}</span>
-                        <span className="ms-2 text-[var(--text-muted)]">{s.answerStatus}{s.severity ? ` · ${s.severity}` : ''}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            {facilities.length > 0 && (
-              <div className="mt-6 border-t border-[var(--border-soft)] pt-5">
-                <h2 className="font-semibold text-[var(--text-primary)]">{t('assessment.healthcareReferral')}</h2>
-                <p className="mt-2 text-sm text-[var(--text-secondary)]">{t('assessment.diagnosisDisclaimer')}</p>
-                {referralSuccess && <StatusMessage tone="success">{referralSuccess}</StatusMessage>}
-                {!referralSuccess && (
-                  <form className="mt-4 space-y-3" onSubmit={submitReferral}>
-                    <label className="form-label">{t('assessment.selectFacility')}
-                      <select className="form-input" value={selectedFacilityId} onChange={(e) => setSelectedFacilityId(e.target.value)}>
-                        {facilities.map((f) => <option key={f.id} value={f.id}>{f.name}{f.city ? ` - ${f.city}` : ''}</option>)}
-                      </select>
-                    </label>
-                    <label className="form-label">{t('assessment.notes')} <span className="font-normal text-[var(--text-muted)]">{t('common.optional')}</span>
-                      <textarea className="form-input" rows="2" value={referralNotes} onChange={(e) => setReferralNotes(e.target.value)} />
-                    </label>
-                    {referralError && <StatusMessage>{referralError}</StatusMessage>}
-                    <button className="button-secondary" disabled={referralSubmitting}>
-                      {referralSubmitting ? t('assessment.creatingReferral') : t('assessment.createReferral')}
-                    </button>
-                  </form>
-                )}
-              </div>
-            )}
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button className="button-primary" onClick={() => onNavigate('dashboard')}>{t('assessment.backToDashboard')}</button>
-              <button className="button-secondary" onClick={startNew}>{t('ai.startOver')}</button>
-            </div>
-          </div>
-        )}
+            <AssessmentResultSection
+              assessment={assessment}
+              aiExplanation={aiExplanation}
+              notedSymptoms={notedSymptoms}
+              facilities={facilities}
+              user={user}
+              onNavigate={onNavigate}
+              onRestart={startNew}
+            />
+          )}
 
         {phase === 'ready' && !showResult && (
           <div className="ai-confirm-section" ref={confirmSectionRef}>

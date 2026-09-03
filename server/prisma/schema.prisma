@@ -141,6 +141,7 @@ model PatientProfile {
   assessments     Assessment[]
   referrals       Referral[]
   emergencyContacts EmergencyContact[]
+  checkIns        WeeklyCheckIn[]
 
   @@map("patient_profiles")
 }
@@ -194,6 +195,7 @@ model Assessment {
   assessmentSymptoms AssessmentSymptom[]
   referrals       Referral[]
   careMission     CareMission?
+  routedCheckIns  WeeklyCheckIn[] @relation("RoutedCheckIn")
 
   @@map("assessments")
 }
@@ -352,4 +354,20 @@ model ReferralStatusHistory {
 
   @@index([referralId, createdAt])
   @@map("referral_status_history")
+}
+
+model WeeklyCheckIn {
+  id                       Int       @id @default(autoincrement())
+  patientProfileId        Int       @map("patient_profile_id")
+  gestationalWeekAtCheckIn Int      @map("gestational_week_at_check_in")
+  answers                  Json
+  freeTextNote             String?   @map("free_text_note") @db.Text
+  routedToAssessmentId     Int?      @unique @map("routed_to_assessment_id")
+  createdAt                DateTime  @default(now()) @map("created_at")
+
+  patient             PatientProfile @relation(fields: [patientProfileId], references: [id])
+  routedToAssessment  Assessment?    @relation("RoutedCheckIn", fields: [routedToAssessmentId], references: [id])
+
+  @@index([patientProfileId, gestationalWeekAtCheckIn])
+  @@map("weekly_check_ins")
 }

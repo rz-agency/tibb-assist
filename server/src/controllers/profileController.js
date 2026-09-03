@@ -1,4 +1,5 @@
 const prisma = require('../lib/prisma')
+const { decoratePregnancy } = require('../lib/gestationalAge')
 
 const patientProfileSelect = {
   id: true,
@@ -39,6 +40,16 @@ function parseId(value) {
   return Number.isInteger(id) && id > 0 ? id : null
 }
 
+/**
+ * Serialize a patient profile for API responses. Pregnancies are decorated
+ * with gestationalWeeks / isPostterm computed live from lmpDate so every
+ * consumer (Dashboard hero, Pregnancy page) sees the current week — the
+ * stored gestationalWeek column may be null or stale.
+ */
+function serializePatientProfile(profile) {
+  return { ...profile, pregnancies: profile.pregnancies.map(decoratePregnancy) }
+}
+
 function handleDatabaseError(error, res) {
   if (error.code === 'P2002') {
     return res.status(409).json({ error: 'A profile already exists for this user.' })
@@ -63,7 +74,7 @@ async function getPatientProfile(req, res) {
     })
 
     if (!profile) return res.status(404).json({ error: 'Patient profile not found.' })
-    return res.json(profile)
+    return res.json(serializePatientProfile(profile))
   } catch (error) {
     return handleDatabaseError(error, res)
   }
@@ -96,7 +107,7 @@ async function savePatientProfile(req, res) {
       select: patientProfileSelect,
     })
 
-    return res.json(profile)
+    return res.json(serializePatientProfile(profile))
   } catch (error) {
     return handleDatabaseError(error, res)
   }

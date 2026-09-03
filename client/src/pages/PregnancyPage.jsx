@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createPregnancy, getPregnancies, updatePregnancy } from '../api/api'
 import StatusMessage from '../components/StatusMessage'
-import { HeartIcon, BabyIcon } from '../components/Illustrations'
+import { BabyIcon } from '../components/Illustrations'
 
 const emptyForm = {
   pregnancyStatus: 'ACTIVE',
@@ -46,6 +46,7 @@ function PregnancyPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const formSectionRef = useRef(null)
 
   const loadPregnancies = async () => {
     try {
@@ -80,6 +81,9 @@ function PregnancyPage() {
     setForm(formFromPregnancy(pregnancy))
     setSuccess('')
     setError('')
+    // The add/edit form lives at the bottom of the page — bring it into
+    // view so clicking "Edit" visibly opens the form.
+    formSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   const cancelEdit = () => {
@@ -111,6 +115,9 @@ function PregnancyPage() {
       setEditingId(null)
       setForm(emptyForm)
       await loadPregnancies()
+      // The form sits below the record cards — return to the top so the
+      // success message and the refreshed record are visible after saving.
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (requestError) {
       setError(requestError.message)
     } finally {
@@ -143,7 +150,10 @@ function PregnancyPage() {
       {pregnancies.length > 0 && (
         <div className="space-y-4">
           {pregnancies.map((pregnancy) => {
-            const gw = pregnancy.gestationalWeek
+            // Prefer the server's live-computed week (derived from LMP on every
+            // request); the stored gestationalWeek column is only a manual
+            // fallback for records without an LMP date.
+            const gw = pregnancy.gestationalWeeks ?? pregnancy.gestationalWeek
             const progress = gw != null ? Math.min(gw / 40 * 100, 100) : null
 
             return (
@@ -180,7 +190,7 @@ function PregnancyPage() {
                   </div>
                   <div>
                     <span className="detail-label">{t('pregnancy.gestationalWeek')}</span>
-                    <span>{pregnancy.gestationalWeek ?? t('common.notRecorded')}</span>
+                    <span>{pregnancy.gestationalWeeks ?? pregnancy.gestationalWeek ?? t('common.notRecorded')}</span>
                   </div>
                 </div>
                 {pregnancy.notes && <p className="mt-5 text-sm text-[var(--text-secondary)]">{t('pregnancy.notesPrefix')} {pregnancy.notes}</p>}
@@ -191,7 +201,11 @@ function PregnancyPage() {
       )}
 
       {/* ── Add/Edit form ────────────────────────────────── */}
-      <section className="content-panel">
+      <section
+        ref={formSectionRef}
+        className={`content-panel${editingId ? ' panel-editing' : ''}`}
+        style={{ scrollMarginTop: '84px' }}
+      >
         <h2 className="section-title">{editingId ? t('pregnancy.editPregnancy') : t('pregnancy.addPregnancy')}</h2>
         <form className="mt-6 space-y-5" onSubmit={submit}>
           <div className="grid gap-5 sm:grid-cols-2">

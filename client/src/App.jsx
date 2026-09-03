@@ -10,6 +10,7 @@ import AssessmentPage from './pages/AssessmentPage'
 import AssessmentHistory from './pages/AssessmentHistory'
 import PregnancyPage from './pages/PregnancyPage'
 import AiAssistantPage from './pages/AiAssistantPage'
+import WeeklyCheckInPage from './pages/WeeklyCheckInPage'
 import CareMissionPage from './pages/CareMissionPage'
 import ReferralJourneyPage from './pages/ReferralJourneyPage'
 import NearbyFacilitiesPage from './pages/NearbyFacilitiesPage'
@@ -54,7 +55,9 @@ function App() {
         ? <PregnancyPage />
         : page === 'ai-assistant'
           ? <AiAssistantPage user={user} onNavigate={setPage} />
-          : page === 'care-missions'
+          : page === 'checkin'
+            ? <WeeklyCheckInPage user={user} onNavigate={setPage} />
+            : page === 'care-missions'
             ? <CareMissionPage user={user} />
             : page === 'referrals'
               ? <ReferralJourneyPage user={user} />

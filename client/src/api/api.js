@@ -156,3 +156,12 @@ export const logEmergencyAction = (missionId, actionType) =>
     method: 'POST',
     body: JSON.stringify({ actionType }),
   })
+
+export const getCheckInQuestions = () => apiRequest('/checkins/current-questions')
+
+export const getCheckInDue = () => apiRequest('/checkins/due')
+
+export const submitCheckIn = (answers, freeTextNote) => apiRequest('/checkins', {
+  method: 'POST',
+  body: JSON.stringify({ answers, freeTextNote }),
+})

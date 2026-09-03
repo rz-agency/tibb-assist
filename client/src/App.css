@@ -175,6 +175,13 @@ html[dir="rtl"] select.form-input {
 }
 .content-panel:hover { box-shadow: var(--shadow-md); }
 
+/* Edit-mode emphasis — marks a panel repurposed for editing so it reads
+   as "the form that just opened" (e.g. Pregnancy page edit flow) */
+.content-panel.panel-editing {
+  border-color: var(--teal-400);
+  box-shadow: var(--shadow-glow-teal);
+}
+
 /* Compact card — tighter, for stats/actions */
 .compact-card {
   background: var(--bg-card);
@@ -851,6 +858,67 @@ html[dir="rtl"] select.form-input {
 .ga-pill-postterm { background: var(--risk-red-bg); color: var(--risk-red-fg); border: 1px solid var(--risk-red-ring); font-weight: 700; }
 
 /* ════════════════════════════════════════════════════════
+   WEEKLY CHECK-IN
+   ════════════════════════════════════════════════════════ */
+.checkin-option {
+  display: block;
+  width: 100%;
+  text-align: start;
+  padding: var(--space-3) var(--space-4);
+  border: 1.5px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+.checkin-option:hover { border-color: var(--teal-500); }
+.checkin-option:disabled { opacity: 0.6; cursor: not-allowed; }
+.checkin-option-selected {
+  border-color: var(--teal-500);
+  background: var(--teal-50);
+  font-weight: 600;
+}
+.checkin-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--teal-500);
+  border-radius: var(--radius-xl);
+  background: var(--teal-50);
+}
+.checkin-banner-text {
+  font-weight: 600;
+  color: var(--teal-900);
+}
+.checkin-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.checkin-banner-dismiss {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: transparent;
+  color: var(--teal-900);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.checkin-banner-dismiss:hover { background: var(--teal-100); }
+/* The shared result section keeps its chat-panel top border — remove it when
+   the section is used standalone inside a content panel. */
+.checkin-result-wrap .ai-result-section { border-top: none; }
+
+/* ════════════════════════════════════════════════════════
    RTL OVERRIDES
    ════════════════════════════════════════════════════════ */
 html[dir="rtl"] .ai-bubble-assistant {
@@ -868,3 +936,4 @@ html[dir="rtl"] .cm-checklist-item { text-align: right; }
 html[dir="rtl"] .nav-item          { text-align: right; }
 html[dir="rtl"] .action-card       { text-align: right; }
 html[dir="rtl"] .history-item      { text-align: right; }
+html[dir="rtl"] .checkin-option    { text-align: right; }

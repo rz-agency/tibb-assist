@@ -27,6 +27,7 @@
     "navAssignedWomen": "مقرر کردہ خواتین",
     "navDashboard": "ڈیش بورڈ",
     "navPregnancy": "حمل",
+    "navCheckIn": "ہفتہ وار چیک اپ",
     "navNewAssessment": "نیا جائزہ",
     "navHistory": "تاریخ",
     "navAiAssistant": "اے آئی معاون",
@@ -358,5 +359,152 @@
     "FOLLOW_UP_DUE": "فالو اپ مقرر",
     "CLOSED": "بند",
     "CANCELLED": "منسوخ"
+  }
+,
+  "checkIn": {
+    "eyebrow": "ہفتہ وار چیک اپ",
+    "pageTitle": "آپ کا ہفتہ {{week}} کا چیک اپ",
+    "pageIntro": "اس ہفتے آپ کیسا محسوس کر رہی ہیں، اس بارے میں چند مختصر سوالات۔",
+    "loading": "آپ کا چیک اپ لوڈ ہو رہا ہے...",
+    "goToPregnancy": "حمل کی تفصیل اپ ڈیٹ کریں",
+    "milestone": {
+      "FIRST_MOVEMENT": "اس ہفتے کے قریب بہت سی خواتین کو اپنے بچے کی پہلی حرکت محسوس ہوتی ہے — ہم اس کے بارے میں بھی پوچھیں گے۔",
+      "VIABILITY": "آپ کا بچہ نشوونما کے ایک اہم مرحلے میں ہے — ہم حرکتوں کے انداز کے بارے میں پوچھیں گے۔",
+      "TERM_PREP": "آپ کی تاریخ قریب آ رہی ہے — پیدائش کی تیاری کے لیے ہم چند اضافی سوالات پوچھیں گے۔"
+    },
+    "questions": {
+      "wellbeing": {
+        "text": "آپ عمومی طور پر کیسا محسوس کر رہی ہیں؟",
+        "options": {
+          "wellbeing_good": "خوش و خرم اور توانا",
+          "wellbeing_okay": "ٹھیک ٹھاک",
+          "wellbeing_not_well": "اچھا محسوس نہیں کر رہی"
+        }
+      },
+      "nausea_appetite": {
+        "text": "متلی اور بھوک کیسی ہے؟",
+        "options": {
+          "nausea_eating_well": "اچھی بھوک، کوئی متلی نہیں",
+          "nausea_some": "تھوڑی متلی، کھانا کھا لیتی ہوں",
+          "nausea_cannot_keep_food": "کھانا یا پانی اندر نہیں رہتا"
+        }
+      },
+      "fatigue": {
+        "text": "تھکاوٹ کیسی ہے؟",
+        "options": {
+          "fatigue_normal": "عام سی تھکاوٹ",
+          "fatigue_more_tired": "عام سے زیادہ تھکاوٹ",
+          "fatigue_exhausted": "بہت زیادہ تھکاوٹ، روزمرہ کام مشکل"
+        }
+      },
+      "spotting_bleeding": {
+        "text": "کوئی دھبے یا خون کا آنا ہے؟",
+        "options": {
+          "spotting_none": "کوئی نہیں",
+          "spotting_light": "صرف ہلکے دھبے",
+          "spotting_heavier": "ہلکے دھبوں سے زیادہ"
+        }
+      },
+      "swelling": {
+        "text": "کوئی سوجن ہے؟",
+        "options": {
+          "swelling_none": "کوئی نہیں",
+          "swelling_mild_ankles": "ٹخنوں یا پیروں میں ہلکی سوجن",
+          "swelling_face_hands": "چہرے یا ہاتھوں کی سوجن"
+        }
+      },
+      "headaches": {
+        "text": "سر درد ہے؟",
+        "options": {
+          "headache_none": "کوئی نہیں",
+          "headache_mild": "ہلکا، خود ٹھیک ہو جاتا ہے",
+          "headache_severe": "شدید سر درد"
+        }
+      },
+      "baby_movement": {
+        "text": "بچے کی حرکت کیسی ہے؟",
+        "options": {
+          "movement_as_usual": "ہمیشہ جیسی",
+          "movement_less": "عام سے کم",
+          "movement_none_hours": "کئی گھنٹوں سے کوئی حرکت محسوس نہیں"
+        }
+      },
+      "contractions": {
+        "text": "پیٹ میں کساؤ یا درد ہے؟",
+        "options": {
+          "contractions_none": "کوئی نہیں",
+          "contractions_occasional": "کبھی کبھار، بے ترتیب",
+          "contractions_regular": "باقاعدہ یا درد والا کساؤ"
+        }
+      },
+      "vision_changes": {
+        "text": "آنکھوں میں کوئی تبدیلی محسوس ہوتی ہے؟",
+        "options": {
+          "vision_none": "کوئی تبدیلی نہیں",
+          "vision_slight_blurring": "کبھی کبھار ہلکی دھندلاہٹ",
+          "vision_blurred_flashes": "دھندلی نظر یا چمکتی روشنیاں"
+        }
+      },
+      "first_movement": {
+        "text": "کیا آپ کو بچے کی پہلی حرکت محسوس ہوئی ہے؟",
+        "options": {
+          "first_movement_felt": "جی ہاں، محسوس ہوئی",
+          "first_movement_not_yet": "ابھی نہیں",
+          "first_movement_not_sure": "یقین نہیں"
+        }
+      },
+      "movement_pattern": {
+        "text": "کیا بچے کی حرکتوں کا کوئی باقاعدہ انداز ہے؟",
+        "options": {
+          "pattern_regular": "جی ہاں، باقاعدہ انداز",
+          "pattern_unclear": "انداز کا یقین نہیں",
+          "pattern_reduced": "حرکتیں نمایاں طور پر کم ہیں"
+        }
+      },
+      "baby_position": {
+        "text": "کیا آپ کو اپنے بچے کی پوزیشن کا پتہ ہے؟",
+        "options": {
+          "position_head_down": "سر نیچے ہے",
+          "position_unsure": "پتہ نہیں",
+          "position_breech_or_sideways": "بتایا گیا ہے کہ کروڑ یا ٹیڑھی پوزیشن میں ہے"
+        }
+      },
+      "contraction_frequency": {
+        "text": "اگر کساؤ ہو تو کتنے وقفے سے آتا ہے؟",
+        "options": {
+          "freq_none_yet": "ابھی کوئی کساؤ نہیں",
+          "freq_occasional": "کبھی کبھار، بہت وقفے سے",
+          "freq_regular_10min": "باقاعدہ، تقریباً ہر 10 منٹ بعد"
+        }
+      }
+    },
+    "freeTextLabel": "کچھ اور بتانا چاہتی ہیں؟",
+    "freeTextHint": "اختیاری — جو آپ یہاں لکھیں گی وہ علامات کے چیک کے ذریعے دیکھی جائے گی۔",
+    "incompleteHint": "چیک اپ جمع کرانے کے لیے تمام سوالات کے جواب دیں۔",
+    "submit": "چیک اپ جمع کریں",
+    "submitting": "محفوظ ہو رہا ہے...",
+    "summaryTitle": "شکریہ — کوئی فوری تشویش نوٹ نہیں ہوئی",
+    "summaryBody": "آپ کا ہفتہ {{week}} کا چیک اپ محفوظ ہو گیا۔",
+    "advisoryTitle": "اگلے چیک اپ میں ضرور بتائیں",
+    "advisory": {
+      "wellbeing_not_well": "آپ نے بتایا کہ اچھا محسوس نہیں کر رہیں — اگلے چیک اپ میں ضرور بتائیں۔",
+      "nausea_cannot_keep_food": "اگر کھانا یا پانی اندر نہ رہے تو اگلی ملاقات میں ڈاکٹر یا LHW کو بتائیں۔",
+      "fatigue_more_tired": "زیادہ تھکاوٹ حمل میں عام ہے — جتنا ممکن ہو آرام کریں اور اگلے چیک اپ میں بتائیں۔",
+      "fatigue_exhausted": "مسلسل تھکاوٹ خون کی کمی کی علامت ہو سکتی ہے — اگلے چیک اپ میں بتائیں۔",
+      "spotting_light": "ہلکے دھبوں کا ذکر اگلی ملاقات میں کریں۔ اگر یہ زیادہ ہو جائے تو علامات کا چیک استعمال کریں۔",
+      "vision_slight_blurring": "آنکھوں کی کسی بھی تبدیلی کا ذکر اگلے چیک اپ میں کریں۔",
+      "first_movement_not_sure": "اگر 20 سے 22 ہفتے تک حرکت محسوس نہ ہو تو اگلے چیک اپ میں بتائیں۔",
+      "pattern_unclear": "روز ایک ہی وقت پر بچے کی حرکتیں گننے کی کوشش کریں — جو محسوس ہو وہ اگلے چیک اپ میں بتائیں۔",
+      "position_unsure": "اگلے چیک اپ پر پوچھیں کہ آپ کا بچہ کس پوزیشن میں ہے۔",
+      "position_breech_or_sideways": "بچے اکثر خود پلٹ جاتے ہیں — اگلی ملاقات میں ڈاکٹر سے پوزیشن کے بارے میں پوچھیں۔"
+    },
+    "routingFailedNote": "ہم نے آپ کا چیک اپ محفوظ کر لیا، لیکن علامات کا چیک ابھی مکمل نہیں ہو سکا۔ براہ کرم معیاری علامات کا چیک استعمال کریں۔",
+    "useStandardAssessment": "علامات کا چیک کریں",
+    "bannerText": "آپ کا ہفتہ {{week}} کا چیک اپ تیار ہے",
+    "bannerAction": "چیک اپ شروع کریں",
+    "bannerDismiss": "یاد دہانی بند کریں",
+    "completedTitle": "آپ نے اس ہفتے کا چیک اپ مکمل کر لیا ہے",
+    "completedBody": "آپ کا ہفتہ {{week}} کا چیک اپ محفوظ ہو گیا۔ نیا چیک اپ اگلے ہفتے تیار ہو گا۔",
+    "completedRedo": "پھر بھی اس ہفتے کا چیک اپ کریں"
   }
 }

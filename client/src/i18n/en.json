@@ -27,6 +27,7 @@
     "navAssignedWomen": "Assigned women",
     "navDashboard": "Dashboard",
     "navPregnancy": "Pregnancy",
+    "navCheckIn": "Weekly check-in",
     "navNewAssessment": "New assessment",
     "navHistory": "History",
     "navAiAssistant": "AI Assistant",
@@ -358,5 +359,152 @@
     "FOLLOW_UP_DUE": "Follow-Up Due",
     "CLOSED": "Closed",
     "CANCELLED": "Cancelled"
+  }
+,
+  "checkIn": {
+    "eyebrow": "Weekly check-in",
+    "pageTitle": "Your Week {{week}} check-in",
+    "pageIntro": "A few quick questions about how you are feeling this week.",
+    "loading": "Loading your check-in...",
+    "goToPregnancy": "Update pregnancy details",
+    "milestone": {
+      "FIRST_MOVEMENT": "Around this week, many women feel their baby's first movements — we will ask about that too.",
+      "VIABILITY": "Your baby is reaching an important stage of development — we will ask about the pattern of movements.",
+      "TERM_PREP": "You are getting close to your due date — we will ask a few extra questions to prepare for delivery."
+    },
+    "questions": {
+      "wellbeing": {
+        "text": "How are you feeling overall?",
+        "options": {
+          "wellbeing_good": "Well and energetic",
+          "wellbeing_okay": "Okay, mostly fine",
+          "wellbeing_not_well": "Not feeling well"
+        }
+      },
+      "nausea_appetite": {
+        "text": "How are nausea and appetite?",
+        "options": {
+          "nausea_eating_well": "Eating well, no nausea",
+          "nausea_some": "Some nausea, still managing to eat",
+          "nausea_cannot_keep_food": "Cannot keep food or fluids down"
+        }
+      },
+      "fatigue": {
+        "text": "How is your energy and tiredness?",
+        "options": {
+          "fatigue_normal": "Normal tiredness",
+          "fatigue_more_tired": "More tired than usual",
+          "fatigue_exhausted": "Exhausted — daily tasks are hard"
+        }
+      },
+      "spotting_bleeding": {
+        "text": "Any spotting or bleeding?",
+        "options": {
+          "spotting_none": "None",
+          "spotting_light": "Light spotting only",
+          "spotting_heavier": "Heavier than light spotting"
+        }
+      },
+      "swelling": {
+        "text": "Any swelling?",
+        "options": {
+          "swelling_none": "None",
+          "swelling_mild_ankles": "Mild swelling of ankles or feet",
+          "swelling_face_hands": "Swelling of face or hands"
+        }
+      },
+      "headaches": {
+        "text": "Any headaches?",
+        "options": {
+          "headache_none": "None",
+          "headache_mild": "Mild, goes away on its own",
+          "headache_severe": "Severe headache"
+        }
+      },
+      "baby_movement": {
+        "text": "How is your baby's movement?",
+        "options": {
+          "movement_as_usual": "Moving as usual",
+          "movement_less": "Moving less than usual",
+          "movement_none_hours": "No movement felt in several hours"
+        }
+      },
+      "contractions": {
+        "text": "Any contractions or belly tightening?",
+        "options": {
+          "contractions_none": "None",
+          "contractions_occasional": "Occasional, not regular",
+          "contractions_regular": "Regular or painful tightening"
+        }
+      },
+      "vision_changes": {
+        "text": "Any changes in your vision?",
+        "options": {
+          "vision_none": "No changes",
+          "vision_slight_blurring": "Slight blurring at times",
+          "vision_blurred_flashes": "Blurred vision or flashing lights"
+        }
+      },
+      "first_movement": {
+        "text": "Have you felt your baby's first movements?",
+        "options": {
+          "first_movement_felt": "Yes, I have felt them",
+          "first_movement_not_yet": "Not yet",
+          "first_movement_not_sure": "Not sure"
+        }
+      },
+      "movement_pattern": {
+        "text": "Is there a regular pattern to your baby's movements?",
+        "options": {
+          "pattern_regular": "Yes, a regular pattern",
+          "pattern_unclear": "Not sure of a pattern",
+          "pattern_reduced": "Movements are clearly reduced"
+        }
+      },
+      "baby_position": {
+        "text": "Do you know your baby's position?",
+        "options": {
+          "position_head_down": "Head down",
+          "position_unsure": "Not sure",
+          "position_breech_or_sideways": "I was told breech or sideways"
+        }
+      },
+      "contraction_frequency": {
+        "text": "If you have contractions, how far apart are they?",
+        "options": {
+          "freq_none_yet": "No contractions yet",
+          "freq_occasional": "Occasional, far apart",
+          "freq_regular_10min": "Regular, about every 10 minutes"
+        }
+      }
+    },
+    "freeTextLabel": "Anything else you want to mention?",
+    "freeTextHint": "Optional. Anything you write here will be checked through a symptom assessment.",
+    "incompleteHint": "Please answer all questions to submit your check-in.",
+    "submit": "Submit check-in",
+    "submitting": "Saving...",
+    "summaryTitle": "Thanks — nothing urgent noted",
+    "summaryBody": "Your Week {{week}} check-in is saved.",
+    "advisoryTitle": "Worth mentioning at your next visit",
+    "advisory": {
+      "wellbeing_not_well": "You mentioned not feeling well — do mention this at your next check-up.",
+      "nausea_cannot_keep_food": "If you cannot keep food or fluids down, tell your doctor or LHW at your next visit.",
+      "fatigue_more_tired": "Extra tiredness is common in pregnancy — rest when you can and mention it at your next visit.",
+      "fatigue_exhausted": "Ongoing exhaustion can be a sign of anemia — mention it at your next visit.",
+      "spotting_light": "Light spotting should be mentioned at your next visit. If it becomes heavier, please use the symptom check.",
+      "vision_slight_blurring": "Mention any vision changes at your next visit.",
+      "first_movement_not_sure": "If you have not felt movement by weeks 20-22, mention it at your next visit.",
+      "pattern_unclear": "Try counting your baby's movements at the same time each day — mention what you notice at your next visit.",
+      "position_unsure": "Ask at your next visit which position your baby is in.",
+      "position_breech_or_sideways": "Babies can still turn on their own — ask your doctor about position at your next visit."
+    },
+    "routingFailedNote": "We saved your check-in, but we could not complete the symptom check right now. Please use the standard symptom check.",
+    "useStandardAssessment": "Go to symptom check",
+    "bannerText": "Your Week {{week}} check-in is ready",
+    "bannerAction": "Start check-in",
+    "bannerDismiss": "Dismiss reminder",
+    "completedTitle": "You've completed this week's check-in",
+    "completedBody": "Your Week {{week}} check-in is saved. A new check-in will be ready next week.",
+    "completedRedo": "Do this week's check-in anyway"
   }
 }
