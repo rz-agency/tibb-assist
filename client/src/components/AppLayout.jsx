@@ -26,7 +26,7 @@ function AppLayout({ user, currentPage, onNavigate, onLogout, children }) {
   return (
     <div className="min-h-screen text-[var(--text-primary)]" style={{ background: 'var(--bg-page)' }}>
       {/* ── Header ────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 border-b backdrop-blur-md" style={{ borderColor: 'var(--border-soft)', background: 'rgba(247,250,249,0.85)' }}>
+      <header className="sticky top-0 z-30 border-b backdrop-blur-md" style={{ borderColor: 'var(--border-soft)', background: 'rgba(250,248,244,0.88)' }}>
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3 sm:px-8">
           <button className="text-start" onClick={() => onNavigate('dashboard')}>
             <span className="block text-[10px] font-bold uppercase tracking-[var(--tracking-wider)]" style={{ color: 'var(--teal-700)' }}>{t('layout.maternalCare')}</span>

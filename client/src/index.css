@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 @import './styles/tokens.css';
 
@@ -32,6 +33,51 @@ h1, h2, h3 { font-family: var(--font-display); line-height: var(--leading-tight)
 a { color: var(--teal-700); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
+/* ── RTL / Urdu typography ─────────────────────────────── */
+html[dir="rtl"] {
+  font-family: var(--font-urdu);
+  line-height: var(--leading-urdu);
+  font-size: calc(var(--text-base) * 1.05);
+}
+html[dir="rtl"] h1,
+html[dir="rtl"] h2,
+html[dir="rtl"] h3 {
+  font-family: var(--font-urdu);
+  line-height: var(--leading-urdu);
+}
+html[dir="rtl"] .eyebrow {
+  font-family: var(--font-urdu);
+  letter-spacing: 0;
+  text-transform: none;
+}
+html[dir="rtl"] .nav-item {
+  font-family: var(--font-urdu);
+  font-size: calc(var(--text-sm) * 1.1);
+  letter-spacing: 0;
+}
+html[dir="rtl"] .button-primary,
+html[dir="rtl"] .button-secondary {
+  font-family: var(--font-urdu);
+  font-size: calc(var(--text-sm) * 1.1);
+  letter-spacing: 0;
+}
+html[dir="rtl"] .form-label,
+html[dir="rtl"] .form-input {
+  font-family: var(--font-urdu);
+  letter-spacing: 0;
+}
+html[dir="rtl"] .risk-badge,
+html[dir="rtl"] .status-badge {
+  font-family: var(--font-urdu);
+  letter-spacing: 0;
+  text-transform: none;
+}
+html[dir="rtl"] .detail-label {
+  font-family: var(--font-urdu);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 /* ── Focus ring ────────────────────────────────────────── */
 :focus-visible {
   outline: 2px solid var(--teal-500);
@@ -44,7 +90,7 @@ a:hover { text-decoration: underline; }
   color: var(--teal-900);
 }
 
-/* ── Scrollbar (subtle) ────────────────────────────────── */
+/* ── Scrollbar (subtle, warm) ──────────────────────────── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: var(--radius-full); }

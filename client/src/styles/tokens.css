@@ -1,72 +1,83 @@
 /* ─────────────────────────────────────────────────────────
    Tibb Assist — Design Tokens
-   Restrained, professional pregnancy-care design language:
-   deep teal / cream / navy neutrals with sparing gold accents.
-   Saturated colour is reserved for risk status (GREEN/YELLOW/RED).
+   Warm, professional maternal-care design language:
+   deep teal-green / cream / warm neutrals with gold accents.
+   Inspired by Pakistani aesthetics — warm earth tones, rich
+   greens, and cream. Saturated colour reserved for risk status.
    ───────────────────────────────────────────────────────── */
 
 :root {
   /* ── Brand palette ─────────────────────────────────────── */
-  --teal-900:  #0F4C5C;
-  --teal-700:  #1A5F70;
-  --teal-600:  #227387;
-  --teal-500:  #2E88A0;
-  --teal-400:  #5BA9BC;
-  --teal-200:  #B5DCE5;
-  --teal-100:  #DCEEF3;
-  --teal-50:   #EEF7F9;
+  /* Warmer teal-green: less blue, more organic               */
+  --teal-900:  #155E52;
+  --teal-700:  #1D7568;
+  --teal-600:  #268A7A;
+  --teal-500:  #319E8C;
+  --teal-400:  #5CB8A7;
+  --teal-200:  #B4DDD4;
+  --teal-100:  #D9F0EB;
+  --teal-50:   #EDF8F5;
 
-  --amber-700: #8C6510;
-  --amber-600: #B58214;
-  --amber-500: #D99A1B;
-  --amber-400: #E4B44E;
-  --amber-200: #F3DFA8;
-  --amber-100: #FAF0D2;
-  --amber-50:  #FDF8EA;
+  /* Gold/amber — warmer, richer                              */
+  --amber-700: #8B6914;
+  --amber-600: #B08518;
+  --amber-500: #D4A024;
+  --amber-400: #E2B94E;
+  --amber-200: #F0D98A;
+  --amber-100: #F8EDBE;
+  --amber-50:  #FDF6E3;
 
-  --coral-500: #e07a6a;
-  --coral-400: #e8988b;
-  --coral-200: #f5cdc5;
-  --coral-100: #fbeae7;
-  --coral-50:  #fef5f3;
+  --coral-500: #D9716A;
+  --coral-400: #E49088;
+  --coral-200: #F3C7C0;
+  --coral-100: #FBE6E3;
+  --coral-50:  #FDF3F1;
 
-  --lavender-500: #8b7ab8;
-  --lavender-400: #a99bd0;
-  --lavender-200: #d5cdec;
-  --lavender-100: #edeaf6;
-  --lavender-50:  #f7f5fb;
+  --lavender-500: #8878B0;
+  --lavender-400: #A698C8;
+  --lavender-200: #D2C9E6;
+  --lavender-100: #EBE8F4;
+  --lavender-50:  #F6F4FA;
+
+  /* Sage — a new warm accent for variety                     */
+  --sage-700: #4A6B50;
+  --sage-500: #6B9B72;
+  --sage-200: #BDDABF;
+  --sage-100: #DEEDDF;
+  --sage-50:  #EFF6EF;
 
   /* ── Risk colours ──────────────────────────────────────── */
-  --risk-green-fg:  #176b4d;
-  --risk-green-bg:  #dff3ea;
-  --risk-green-ring:#b0dcc8;
+  --risk-green-fg:  #1A6B4E;
+  --risk-green-bg:  #E2F5EC;
+  --risk-green-ring:#B3DCCA;
 
-  --risk-amber-fg:  #8a6118;
-  --risk-amber-bg:  #fdf0da;
-  --risk-amber-ring:#f0d9a8;
+  --risk-amber-fg:  #8A6518;
+  --risk-amber-bg:  #FEF1DA;
+  --risk-amber-ring:#EED9A8;
 
-  --risk-red-fg:    #9b2c2c;
-  --risk-red-bg:    #fde8e8;
-  --risk-red-ring:  #f5b8b8;
+  --risk-red-fg:    #9B2C2C;
+  --risk-red-bg:    #FDE8E8;
+  --risk-red-ring:  #F5B8B8;
 
-  /* ── Neutrals ──────────────────────────────────────────── */
-  --bg-page:    #F7FAF9;
-  --bg-card:    #ffffff;
-  --bg-subtle:  #ECF2F3;
-  --bg-input:   #FBFDFD;
+  /* ── Neutrals (warmer, cream-based) ───────────────────── */
+  --bg-page:    #FAF8F4;
+  --bg-card:    #FFFFFF;
+  --bg-subtle:  #F0EDE7;
+  --bg-input:   #FDFCF9;
 
-  --border-soft:  #DDE8E6;
-  --border-input: #C7D6D3;
+  --border-soft:  #E2DDD5;
+  --border-input: #D1CBC1;
   --border-focus: var(--teal-700);
 
-  --text-primary:   #12343B;
-  --text-secondary: #42585F;
-  --text-muted:     #5A7480;
-  --text-inverse:   #ffffff;
+  --text-primary:   #1E2D2A;
+  --text-secondary: #4A5C56;
+  --text-muted:     #6E7F78;
+  --text-inverse:   #FFFFFF;
 
   /* ── Typography ────────────────────────────────────────── */
   --font-display: Georgia, 'Times New Roman', 'Noto Serif', serif;
   --font-body:    'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-urdu:    'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Urdu Typesetting', serif;
 
   --text-xs:  0.75rem;
   --text-sm:  0.8125rem;
@@ -80,6 +91,7 @@
   --leading-tight:  1.2;
   --leading-normal: 1.55;
   --leading-loose:  1.7;
+  --leading-urdu:   2.2;
 
   --tracking-wide: 0.04em;
   --tracking-wider: 0.12em;
@@ -97,8 +109,6 @@
   --space-16: 4rem;
 
   /* ── Radii ─────────────────────────────────────────────── */
-  /* Scale: controls (buttons/inputs) = sm · cards/panels = lg ·
-     feature panels (hero, result) = xl · badges/pills = full  */
   --radius-sm:  8px;
   --radius-md:  12px;
   --radius-lg:  16px;
@@ -106,18 +116,18 @@
   --radius-2xl: 28px;
   --radius-full: 999px;
 
-  /* ── Shadows ───────────────────────────────────────────── */
-  /* Depth system: resting → hover → elevated (navy-tinted)  */
-  --shadow-xs: 0 1px 2px rgba(18,52,59,0.05);
-  --shadow-sm: 0 2px 8px rgba(18,52,59,0.07);
-  --shadow-md: 0 4px 16px rgba(18,52,59,0.10);
-  --shadow-lg: 0 8px 32px rgba(18,52,59,0.12);
-  --shadow-xl: 0 16px 48px rgba(18,52,59,0.14);
+  /* ── Shadows (warm-tinted) ─────────────────────────────── */
+  --shadow-xs: 0 1px 2px rgba(30,45,42,0.05);
+  --shadow-sm: 0 2px 8px rgba(30,45,42,0.07);
+  --shadow-md: 0 4px 16px rgba(30,45,42,0.09);
+  --shadow-lg: 0 8px 32px rgba(30,45,42,0.11);
+  --shadow-xl: 0 16px 48px rgba(30,45,42,0.13);
   --shadow-rest:     var(--shadow-sm);
   --shadow-hover:    var(--shadow-md);
   --shadow-elevated: var(--shadow-lg);
-  --shadow-glow-teal:  0 4px 20px rgba(15,76,92,0.22);
-  --shadow-glow-amber: 0 4px 20px rgba(217,154,27,0.24);
+  --shadow-glow-teal:  0 4px 20px rgba(21,94,82,0.20);
+  --shadow-glow-amber: 0 4px 20px rgba(212,160,36,0.22);
+  --shadow-warm:       0 4px 24px rgba(139,105,20,0.10);
 
   /* ── Transitions ───────────────────────────────────────── */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -127,11 +137,12 @@
   --duration-slow: 400ms;
 
   /* ── Gradients ─────────────────────────────────────────── */
-  --gradient-warm: linear-gradient(135deg, var(--teal-700), var(--teal-900) 70%);
-  --gradient-hero: linear-gradient(160deg, #EDF6F8 0%, #F7FAF9 55%, #FAF6EC 100%);
-  --gradient-auth: linear-gradient(145deg, var(--teal-100), var(--amber-50) 60%, var(--coral-50));
+  --gradient-warm: linear-gradient(135deg, var(--teal-700), var(--teal-900) 60%, #1A4A40);
+  --gradient-hero: linear-gradient(160deg, #F0F8F5 0%, #FAF8F4 40%, #FDF6E3 100%);
+  --gradient-auth: linear-gradient(145deg, var(--teal-100), #F5EDD5 50%, var(--coral-50));
   --gradient-card-warm: linear-gradient(135deg, var(--teal-50), var(--amber-50));
-  --gradient-risk-green: linear-gradient(135deg, #e8f5ee, #dff3ea);
-  --gradient-risk-amber: linear-gradient(135deg, #fef8ee, #fdf0da);
-  --gradient-risk-red: linear-gradient(135deg, #fef5f3, #fde8e8);
+  --gradient-gold-accent: linear-gradient(135deg, var(--amber-50), #FBF2DA);
+  --gradient-risk-green: linear-gradient(135deg, #EAF7EF, #E2F5EC);
+  --gradient-risk-amber: linear-gradient(135deg, #FEF9EF, #FEF1DA);
+  --gradient-risk-red: linear-gradient(135deg, #FEF5F3, #FDE8E8);
 }
