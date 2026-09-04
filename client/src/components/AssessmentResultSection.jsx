@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { createReferral } from '../api/api'
 import StatusMessage from './StatusMessage'
 import EmergencyPanel from './EmergencyPanel'
+import NearbyFacilityList from './NearbyFacilityList'
 
 const RISK_LABEL_KEY = { GREEN: 'assessment.riskGreen', YELLOW: 'assessment.riskYellow', RED: 'assessment.riskRed' }
 
@@ -17,10 +18,10 @@ function cleanSymptomLabel(name) {
  * exactly the same result (including the RED EmergencyPanel and referral
  * form) as a normal assessment.
  */
-function AssessmentResultSection({ assessment, aiExplanation, notedSymptoms, facilities, user, onNavigate, onRestart, ageRiskNote }) {
+function AssessmentResultSection({ assessment, aiExplanation, notedSymptoms, user, onNavigate, onRestart, ageRiskNote }) {
   const { t } = useTranslation()
 
-  const [selectedFacilityId, setSelectedFacilityId] = useState(facilities.length > 0 ? facilities[0].id : '')
+  const [selectedFacility, setSelectedFacility] = useState(null)
   const [referralNotes, setReferralNotes] = useState('')
   const [referralSubmitting, setReferralSubmitting] = useState(false)
   const [referralSuccess, setReferralSuccess] = useState('')
@@ -34,7 +35,7 @@ function AssessmentResultSection({ assessment, aiExplanation, notedSymptoms, fac
     try {
       await createReferral({
         assessmentId: assessment.id,
-        facilityId: Number(selectedFacilityId),
+        ...(selectedFacility ? { facility: selectedFacility } : {}),
         notes: referralNotes || null,
       })
       setReferralSuccess(t('assessment.referralSuccess'))
@@ -94,29 +95,27 @@ function AssessmentResultSection({ assessment, aiExplanation, notedSymptoms, fac
         )}
       </div>
 
-      {facilities.length > 0 && (
-        <div className="mt-6 border-t border-[var(--border-soft)] pt-5">
-          <h2 className="font-semibold text-[var(--text-primary)]">{t('assessment.healthcareReferral')}</h2>
-          <p className="mt-2 text-sm text-[var(--text-secondary)]">{t('assessment.diagnosisDisclaimer')}</p>
-          {referralSuccess && <StatusMessage tone="success">{referralSuccess}</StatusMessage>}
-          {!referralSuccess && (
-            <form className="mt-4 space-y-3" onSubmit={submitReferral}>
-              <label className="form-label">{t('assessment.selectFacility')}
-                <select className="form-input" value={selectedFacilityId} onChange={(e) => setSelectedFacilityId(e.target.value)}>
-                  {facilities.map((f) => <option key={f.id} value={f.id}>{f.name}{f.city ? ` - ${f.city}` : ''}</option>)}
-                </select>
-              </label>
-              <label className="form-label">{t('assessment.notes')} <span className="font-normal text-[var(--text-muted)]">{t('common.optional')}</span>
-                <textarea className="form-input" rows="2" value={referralNotes} onChange={(e) => setReferralNotes(e.target.value)} />
-              </label>
-              {referralError && <StatusMessage>{referralError}</StatusMessage>}
-              <button className="button-secondary" disabled={referralSubmitting}>
-                {referralSubmitting ? t('assessment.creatingReferral') : t('assessment.createReferral')}
-              </button>
-            </form>
-          )}
-        </div>
-      )}
+      <div className="mt-6 border-t border-[var(--border-soft)] pt-5">
+        <h2 className="font-semibold text-[var(--text-primary)]">{t('assessment.healthcareReferral')}</h2>
+        <p className="mt-2 text-sm text-[var(--text-secondary)]">{t('assessment.diagnosisDisclaimer')}</p>
+        {referralSuccess ? (
+          <StatusMessage tone="success">{referralSuccess}</StatusMessage>
+        ) : (
+          <form className="mt-4 space-y-3" onSubmit={submitReferral}>
+            <NearbyFacilityList
+              selectedFacility={selectedFacility}
+              onSelectFacility={setSelectedFacility}
+            />
+            <label className="form-label">{t('assessment.notes')} <span className="font-normal text-[var(--text-muted)]">{t('common.optional')}</span>
+              <textarea className="form-input" rows="2" value={referralNotes} onChange={(e) => setReferralNotes(e.target.value)} />
+            </label>
+            {referralError && <StatusMessage>{referralError}</StatusMessage>}
+            <button className="button-secondary" disabled={referralSubmitting || !selectedFacility}>
+              {referralSubmitting ? t('assessment.creatingReferral') : t('assessment.createReferral')}
+            </button>
+          </form>
+        )}
+      </div>
 
       <div className="mt-6 flex flex-wrap gap-3">
         <button className="button-primary" onClick={() => onNavigate('dashboard')}>{t('assessment.backToDashboard')}</button>

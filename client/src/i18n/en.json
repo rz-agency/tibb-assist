@@ -269,6 +269,8 @@
     "subtitle": "Find hospitals, pharmacies, and clinics close to your current location.",
     "detectingLocation": "Detecting your location...",
     "locationDenied": "Location access was denied or is not supported by your browser. You can enter coordinates manually below.",
+    "locationDeniedBrief": "Location access denied. Showing facilities by district match.",
+    "locationUnsupported": "Location not supported. Showing facilities by district match.",
     "tryAgain": "Try again",
     "manualLabel": "Enter your location manually",
     "manualHint": "Enter latitude and longitude separated by a comma, e.g. 33.57, 73.04",
@@ -281,6 +283,9 @@
     "groupHospitals": "Hospitals",
     "groupPharmacies": "Pharmacies",
     "groupClinics": "Clinics & Doctors",
+    "typeHospital": "Hospital",
+    "typePharmacy": "Pharmacy",
+    "typeClinic": "Clinic",
     "call": "Call",
     "directions": "Directions"
   },

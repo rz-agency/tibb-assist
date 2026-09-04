@@ -5,7 +5,7 @@ import StatusMessage from '../components/StatusMessage'
 
 function Register({ onLogin, onShowLogin }) {
   const { t } = useTranslation()
-  const [form, setForm] = useState({ email: '', password: '', role: 'WOMAN', fullName: '' })
+  const [form, setForm] = useState({ email: '', password: '', role: 'WOMAN', fullName: '', district: '', province: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -16,7 +16,12 @@ function Register({ onLogin, onShowLogin }) {
     setError('')
     setLoading(true)
     try {
-      const result = await registerUser(form)
+      const payload = {
+        ...form,
+        district: form.district.trim() || undefined,
+        province: form.province.trim() || undefined,
+      }
+      const result = await registerUser(payload)
       onLogin(result.user)
     } catch (requestError) {
       setError(requestError.message)
@@ -52,6 +57,16 @@ function Register({ onLogin, onShowLogin }) {
                 <option value="LHW">{t('auth.ladyHealthWorker')}</option>
               </select>
             </label>
+            {form.role === 'WOMAN' && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="form-label">{t('dashboard.formDistrict')}
+                  <input className="form-input" name="district" type="text" value={form.district} onChange={updateField} placeholder="e.g. Karachi" />
+                </label>
+                <label className="form-label">{t('dashboard.formProvince')}
+                  <input className="form-input" name="province" type="text" value={form.province} onChange={updateField} placeholder="e.g. Sindh" />
+                </label>
+              </div>
+            )}
             {error && <StatusMessage>{error}</StatusMessage>}
             <button className="button-primary w-full" disabled={loading}>
               {loading ? t('auth.creatingAccount') : t('auth.createAccount')}

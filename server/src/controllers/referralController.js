@@ -5,6 +5,10 @@ const {
   getAllowedTransitions,
   toCareMissionAction,
 } = require('../lib/referralLifecycle')
+const {
+  buildNearbyFacilityData,
+  resolveNearbyFacility,
+} = require('../lib/nearbyFacilityResolver')
 
 // Status groups for list filtering.
 const activeStatuses = [
@@ -156,15 +160,17 @@ async function listReferrals(req, res) {
   }
 }
 
-// ---------- POST /api/referrals (existing, unchanged behavior) ----------
+// ---------- POST /api/referrals (existing behavior + nearby-facility payload) ----------
 
 async function createReferral(req, res) {
   const assessmentId = parsePositiveInteger(req.body.assessmentId)
   const facilityId = parsePositiveInteger(req.body.facilityId)
-  const { notes } = req.body
+  const { notes, facility } = req.body
 
   if (!assessmentId) return res.status(400).json({ error: 'assessmentId must be a positive integer.' })
-  if (!facilityId) return res.status(400).json({ error: 'facilityId must be a positive integer.' })
+  if (!facilityId && (facility === undefined || facility === null || typeof facility !== 'object' || Array.isArray(facility))) {
+    return res.status(400).json({ error: 'facilityId must be a positive integer, or facility details from the nearby search must be provided.' })
+  }
   if (notes !== undefined && notes !== null && typeof notes !== 'string') {
     return res.status(400).json({ error: 'notes must be text.' })
   }
@@ -184,20 +190,36 @@ async function createReferral(req, res) {
       return res.status(403).json({ error: 'You can only create referrals for an allowed assessment.' })
     }
 
-    const facility = await prisma.healthcareFacility.findUnique({
-      where: { id: facilityId },
-      select: { id: true },
-    })
+    let resolvedFacilityId = facilityId
 
-    if (!facility) {
-      return res.status(404).json({ error: 'Healthcare facility not found.' })
+    if (facilityId) {
+      // Classic path — facilityId referencing an existing HealthcareFacility row.
+      const facilityRecord = await prisma.healthcareFacility.findUnique({
+        where: { id: facilityId },
+        select: { id: true },
+      })
+
+      if (!facilityRecord) {
+        return res.status(404).json({ error: 'Healthcare facility not found.' })
+      }
+    } else {
+      // Nearby Help path — the client sends the OpenStreetMap facility it
+      // selected (same data source as GET /api/facilities/nearby); resolve it
+      // find-or-create onto a HealthcareFacility row to keep the FK valid.
+      const built = buildNearbyFacilityData(facility)
+      if (built.error) {
+        return res.status(400).json({ error: built.error })
+      }
+
+      const facilityRecord = await resolveNearbyFacility(prisma, built.data)
+      resolvedFacilityId = facilityRecord.id
     }
 
     const referral = await prisma.referral.create({
       data: {
         patientId: assessment.patientId,
         assessmentId,
-        facilityId,
+        facilityId: resolvedFacilityId,
         status: 'RECOMMENDED',
         referralDate: new Date(),
         notes: notes ?? null,

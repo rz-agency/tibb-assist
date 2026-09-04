@@ -207,6 +207,7 @@ async function createAssessmentFromExtractedSymptoms({ patient, userId, extracte
       address: true,
       city: true,
       phone: true,
+      isVerified: true,
     },
     orderBy: { name: 'asc' },
   })

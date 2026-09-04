@@ -40,7 +40,7 @@ function isStrongEnoughPassword(password) {
 
 async function register(req, res) {
   const email = normalizeEmail(req.body.email)
-  const { password, role, fullName } = req.body
+  const { password, role, fullName, district, province } = req.body
 
   if (!email || typeof password !== 'string' || !role) {
     return res.status(400).json({ error: 'email, password, and role are required.' })
@@ -80,6 +80,8 @@ async function register(req, res) {
           data: {
             userId: createdUser.id,
             fullName: fullName.trim(),
+            district: typeof district === 'string' && district.trim() ? district.trim() : null,
+            province: typeof province === 'string' && province.trim() ? province.trim() : null,
           },
         })
       }

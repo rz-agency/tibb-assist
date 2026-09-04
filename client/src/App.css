@@ -1200,6 +1200,184 @@ html[dir="rtl"] select.form-input {
 .action-card-rise:nth-child(6) { animation-delay: 350ms; }
 
 /* ════════════════════════════════════════════════════════
+   NEARBY FACILITY LIST (location-aware card UI)
+   ════════════════════════════════════════════════════════ */
+.nearby-facility-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.geo-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+.geo-loading   { background: var(--teal-50);  color: var(--teal-700); }
+.geo-denied    { background: var(--amber-50);  color: var(--amber-700); }
+.geo-unsupported { background: var(--bg-subtle); color: var(--text-muted); }
+.geo-icon { font-size: var(--text-sm); flex-shrink: 0; }
+
+/* GPS-denied fallback block (mirrors the Nearby Help page fallback) */
+.nearby-denied {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.nearby-manual-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  width: 100%;
+}
+.nearby-manual-form .form-input {
+  flex: 1;
+  min-width: 180px;
+}
+.nearby-manual-error {
+  margin: 0;
+  color: var(--risk-red-fg);
+  font-size: var(--text-xs);
+}
+
+.facility-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 380px;
+  overflow-y: auto;
+  padding-inline-end: var(--space-1);
+}
+
+.facility-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
+}
+.facility-card:hover {
+  border-color: var(--teal-400);
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-1px);
+}
+.facility-card:focus-visible {
+  outline: 2px solid var(--teal-500);
+  outline-offset: 2px;
+}
+.facility-card-selected {
+  border-color: var(--teal-600);
+  background: var(--teal-50);
+  box-shadow: var(--shadow-glow-teal);
+}
+.facility-card-selected:hover {
+  border-color: var(--teal-600);
+  transform: none;
+}
+
+.facility-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.facility-card-radio {
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+.radio-circle {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-input);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              background var(--duration-fast) var(--ease-out);
+}
+.radio-circle-selected {
+  border-color: var(--teal-600);
+  background: var(--teal-600);
+}
+.radio-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-inverse);
+}
+
+.facility-card-main {
+  flex: 1;
+  min-width: 0;
+}
+.facility-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: var(--leading-tight);
+}
+.facility-type {
+  margin: 2px 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.facility-distance {
+  flex-shrink: 0;
+}
+.distance-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--amber-100);
+  color: var(--amber-700);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.facility-card-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-soft);
+}
+.facility-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out);
+}
+.facility-action-btn:hover {
+  background: var(--teal-50);
+  border-color: var(--teal-400);
+  color: var(--teal-700);
+}
+.facility-action-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════════════════════
    RTL OVERRIDES
    ════════════════════════════════════════════════════════ */
 html[dir="rtl"] .ai-bubble-assistant {

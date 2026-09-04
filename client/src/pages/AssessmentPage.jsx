@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { createAssessment, createReferral, getFacilities, getPatientProfile, getSymptoms } from '../api/api'
+import { createAssessment, createReferral, getPatientProfile, getSymptoms } from '../api/api'
 import StatusMessage from '../components/StatusMessage'
 import EmergencyPanel from '../components/EmergencyPanel'
+import NearbyFacilityList from '../components/NearbyFacilityList'
 import { ShieldIcon, AlertIcon, HeartIcon } from '../components/Illustrations'
 
 const RISK_LABEL_KEY = { GREEN: 'assessment.riskGreen', YELLOW: 'assessment.riskYellow', RED: 'assessment.riskRed' }
@@ -46,10 +47,7 @@ function AssessmentPage({ user, onNavigate }) {
   const [selectedPregnancyId, setSelectedPregnancyId] = useState('')
   const [completedAssessment, setCompletedAssessment] = useState(null)
   const [ageRiskNote, setAgeRiskNote] = useState(null)
-  const [facilities, setFacilities] = useState([])
-  const [facilityLoading, setFacilityLoading] = useState(false)
-  const [facilityError, setFacilityError] = useState('')
-  const [selectedFacilityId, setSelectedFacilityId] = useState('')
+  const [selectedFacility, setSelectedFacility] = useState(null)
   const [referralNotes, setReferralNotes] = useState('')
   const [referralSubmitting, setReferralSubmitting] = useState(false)
   const [referralSuccess, setReferralSuccess] = useState('')
@@ -121,11 +119,6 @@ function AssessmentPage({ user, onNavigate }) {
       })
       setCompletedAssessment(result.assessment)
       setAgeRiskNote(result.ageRiskNote || null)
-      setFacilityLoading(true)
-      getFacilities().then((facilityResult) => {
-        setFacilities(facilityResult.facilities)
-        if (facilityResult.facilities.length > 0) setSelectedFacilityId(facilityResult.facilities[0].id)
-      }).catch((requestError) => setFacilityError(requestError.message)).finally(() => setFacilityLoading(false))
     } catch (requestError) {
       setError(requestError.message)
     } finally {
@@ -141,7 +134,7 @@ function AssessmentPage({ user, onNavigate }) {
     try {
       await createReferral({
         assessmentId: completedAssessment.id,
-        facilityId: Number(selectedFacilityId),
+        ...(selectedFacility ? { facility: selectedFacility } : {}),
         notes: referralNotes || null,
       })
       setReferralSuccess(t('assessment.referralSuccess'))
@@ -170,7 +163,6 @@ function AssessmentPage({ user, onNavigate }) {
     }
     const resultMessage = resultMessages[completedAssessment.riskLevel]
     const risk = completedAssessment.riskLevel.toLowerCase()
-    const facility = facilities[0]
     const isResultCodeMsg = completedAssessment.resultCode && RESULT_CODE_MESSAGES[completedAssessment.resultCode]
 
     return (
@@ -222,36 +214,23 @@ function AssessmentPage({ user, onNavigate }) {
           <h2 className="section-title">{t('assessment.healthcareReferral')}</h2>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">{t('assessment.diagnosisDisclaimer')}</p>
 
-          {facilityLoading && <p className="mt-3 text-sm text-[var(--text-muted)]">{t('assessment.loadingFacilities')}</p>}
-          {facilityError && <StatusMessage>{facilityError}</StatusMessage>}
-          {!facilityLoading && !facilityError && !facility && <p className="mt-3 text-sm text-[var(--text-muted)]">{t('assessment.noFacilities')}</p>}
-
-          {facility && (
-            <div className="compact-card mt-3">
-              <p className="font-semibold text-[var(--text-primary)]">{facility.name}</p>
-              <p className="text-sm text-[var(--text-secondary)]">{facility.facilityType.replace('_', ' ')}</p>
-              {(facility.address || facility.city) && <p className="text-sm text-[var(--text-muted)]">{[facility.address, facility.city].filter(Boolean).join(', ')}</p>}
-              {facility.phone && <p className="text-sm text-[var(--text-muted)]">{t('assessment.phoneLabel')} {facility.phone}</p>}
-            </div>
-          )}
-
-          {facilities.length > 0 && !referralSuccess && (
+          {referralSuccess ? (
+            <div className="mt-4"><StatusMessage tone="success">{referralSuccess}</StatusMessage></div>
+          ) : (
             <form className="mt-5 space-y-4" onSubmit={submitReferral}>
-              <label className="form-label">{t('assessment.selectFacility')}
-                <select className="form-input" value={selectedFacilityId} onChange={(event) => setSelectedFacilityId(event.target.value)}>
-                  {facilities.map((f) => <option key={f.id} value={f.id}>{f.name}{f.city ? ` - ${f.city}` : ''}</option>)}
-                </select>
-              </label>
+              <NearbyFacilityList
+                selectedFacility={selectedFacility}
+                onSelectFacility={setSelectedFacility}
+              />
               <label className="form-label">{t('assessment.notes')} <span className="font-normal text-[var(--text-muted)]">{t('common.optional')}</span>
                 <textarea className="form-input" rows="2" value={referralNotes} onChange={(event) => setReferralNotes(event.target.value)} />
               </label>
               {referralError && <StatusMessage>{referralError}</StatusMessage>}
-              <button className="button-primary" disabled={referralSubmitting}>
+              <button className="button-primary" disabled={referralSubmitting || !selectedFacility}>
                 {referralSubmitting ? t('assessment.creatingReferral') : t('assessment.createReferral')}
               </button>
             </form>
           )}
-          {referralSuccess && <div className="mt-4"><StatusMessage tone="success">{referralSuccess}</StatusMessage></div>}
         </section>
 
         {/* ── Recorded answers ────────────────────────────── */}
