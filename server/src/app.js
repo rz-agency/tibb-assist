@@ -2,6 +2,8 @@ require('dotenv').config()
 
 const express = require('express')
 const session = require('express-session')
+const mysql = require('mysql2/promise')
+const MySQLStore = require('express-mysql-session')(session)
 const prisma = require('./lib/prisma')
 const authRoutes = require('./routes/authRoutes')
 const assessmentRoutes = require('./routes/assessmentRoutes')
@@ -17,10 +19,13 @@ const checkInRoutes = require('./routes/checkInRoutes')
 
 const app = express()
 
+const sessionStore = new MySQLStore({}, mysql.createPool(process.env.DATABASE_URL))
+
 app.use(express.json({ limit: '5mb' }))
 app.use(session({
   name: 'tibbAssist.sid',
   secret: process.env.SESSION_SECRET,
+  store: sessionStore,
   resave: false,
   saveUninitialized: false,
   cookie: {
