@@ -10,7 +10,7 @@
     "migrate:dev": "prisma migrate dev",
     "generate": "prisma generate",
     "seed": "node prisma/seed.js",
-    "build": "prisma generate"
+    "build": "npx prisma generate"
   },
   "license": "MIT",
   "prisma": {
