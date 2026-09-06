@@ -167,13 +167,3 @@ export const submitCheckIn = (answers, freeTextNote) => apiRequest('/checkins', 
   method: 'POST',
   body: JSON.stringify({ answers, freeTextNote }),
 })
-app.get('/api/health/cookie', (req, res) => {
-  res.cookie('test_cookie', 'hello123', {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    maxAge: 60000
-  });
-
-  res.json({ status: 'ok' });
-});
