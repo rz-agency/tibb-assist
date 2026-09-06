@@ -20,7 +20,10 @@ const checkInRoutes = require('./routes/checkInRoutes')
 
 const app = express()
 
-const sessionStore = new MySQLStore({}, mysql.createPool(process.env.DATABASE_URL))
+const sessionStore = new MySQLStore(
+  {},
+  mysql.createPool(process.env.DATABASE_URL)
+)
 
 app.use((req, res, next) => {
   res.setHeader('Cache-Control', 'no-store')
@@ -70,6 +73,7 @@ app.get('/api/health', (req, res) => {
 app.get('/api/health/db', async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`
+
     res.json({
       status: 'ok',
       database: 'connected',
@@ -86,26 +90,32 @@ app.get('/api/health/db', async (req, res) => {
 })
 
 app.get('/api/health/session', (req, res) => {
-  sessionStore.set('debug-test-id', { cookie: { maxAge: 1000 }, test: true }, (err) => {
-    if (err) {
-      return res.status(500).json({
-        status: 'error',
-        message: err.message,
-        code: err.code || null,
+  sessionStore.set(
+    'debug-test-id',
+    {
+      cookie: { maxAge: 1000 },
+      test: true
+    },
+    (err) => {
+      if (err) {
+        return res.status(500).json({
+          status: 'error',
+          message: err.message,
+          code: err.code || null,
+        })
+      }
+
+      res.json({
+        status: 'ok',
+        message: 'Session store write succeeded.'
       })
     }
-
-    res.json({
-      status: 'ok',
-      message: 'Session store write succeeded.'
-    })
-  })
+  )
 })
 
 /*
  * COOKIE DIAGNOSTIC
- * This deliberately does NOT use the session store or database.
- * It tests whether Vercel/Express can send a normal Set-Cookie header.
+ * Tests whether Express/Vercel can send a normal cookie.
  */
 app.get('/api/health/cookie', (req, res) => {
   res.cookie('test_cookie', 'hello123', {
@@ -121,7 +131,10 @@ app.get('/api/health/cookie', (req, res) => {
   })
 })
 
-module.exports = app
+/*
+ * SESSION COOKIE DIAGNOSTIC
+ * Tests express-session + MySQL session store.
+ */
 app.get('/api/health/session-cookie', (req, res) => {
   req.session.test = 'hello123'
 
@@ -137,13 +150,13 @@ app.get('/api/health/session-cookie', (req, res) => {
 
     console.log('SESSION SAVED SUCCESSFULLY')
     console.log('SESSION ID:', req.sessionID)
-    console.log('SET-COOKIE HEADER:', res.getHeader('Set-Cookie'))
 
     res.json({
       status: 'ok',
       message: 'Session saved successfully.',
       sessionID: req.sessionID,
-      setCookieHeader: res.getHeader('Set-Cookie') || null,
     })
   })
 })
+
+module.exports = app
