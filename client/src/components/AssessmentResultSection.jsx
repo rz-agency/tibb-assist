@@ -1,16 +1,10 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createReferral } from '../api/api'
+import { RISK_LABEL_KEY, cleanSymptomLabel } from '../utils/riskLabels'
 import StatusMessage from './StatusMessage'
 import EmergencyPanel from './EmergencyPanel'
 import NearbyFacilityList from './NearbyFacilityList'
-
-const RISK_LABEL_KEY = { GREEN: 'assessment.riskGreen', YELLOW: 'assessment.riskYellow', RED: 'assessment.riskRed' }
-
-function cleanSymptomLabel(name) {
-  const cleaned = name.replace(/^(Severe|Heavy)\s+/i, '').trim()
-  return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : cleaned
-}
 
 /**
  * Shared assessment result display — the single result view used by the AI

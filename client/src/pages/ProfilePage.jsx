@@ -187,7 +187,7 @@ function ProfilePage({ user }) {
     return <StatusMessage>{t('profile.notFound')}</StatusMessage>
   }
 
-  const computedAge = profile.computedAge ?? profile.age ?? null
+  const computedAge = profile.computedAge ?? computeAgeFromDate(profile.dateOfBirth) ?? null
 
   return (
     <div className="space-y-8">

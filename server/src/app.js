@@ -1,5 +1,4 @@
-
-require('dotenv').config()
+ require('dotenv').config()
 
 const express = require('express')
 const cors = require('cors')
@@ -7,6 +6,7 @@ const session = require('express-session')
 const mysql = require('mysql2/promise')
 const MySQLStore = require('express-mysql-session')(session)
 const prisma = require('./lib/prisma')
+const { authLimiter, aiAssistantLimiter } = require('./middleware/rateLimiters')
 const authRoutes = require('./routes/authRoutes')
 const assessmentRoutes = require('./routes/assessmentRoutes')
 const profileRoutes = require('./routes/profileRoutes')
@@ -18,6 +18,12 @@ const patientRoutes = require('./routes/patientRoutes')
 const aiAssistantRoutes = require('./routes/aiAssistantRoutes')
 const careMissionRoutes = require('./routes/careMissionRoutes')
 const checkInRoutes = require('./routes/checkInRoutes')
+const ancVisitRoutes = require('./routes/ancVisitRoutes')
+const homeVisitRoutes = require('./routes/homeVisitRoutes')
+const immunizationRoutes = require('./routes/immunizationRoutes')
+const followUpRoutes = require('./routes/followUpRoutes')
+const pushNotificationRoutes = require('./routes/pushNotificationRoutes')
+const adminRoutes = require('./routes/adminRoutes')
 
 const app = express()
 
@@ -33,8 +39,13 @@ app.use((req, res, next) => {
   next()
 })
 
+// Cross-origin requests are only expected from the deployed frontend
+// (local development goes through the Vite same-origin proxy). The allowlist
+// form only echoes an origin the browser actually sent and matches, so any
+// other origin receives no CORS headers at all; with FRONTEND_ORIGIN unset
+// the middleware is disabled entirely.
 app.use(cors({
-  origin: 'https://tibb-assist.vercel.app',
+  origin: process.env.FRONTEND_ORIGIN ? [process.env.FRONTEND_ORIGIN] : false,
   credentials: true,
 }))
 
@@ -55,25 +66,10 @@ app.use(session({
   },
 }))
 
-/*
- * SESSION RESPONSE DIAGNOSTIC
- * Checks whether express-session has generated
- * the Set-Cookie header before the response ends.
- */
-app.use((req, res, next) => {
-  const originalEnd = res.end
-
-  res.end = function (...args) {
-    console.log('=== RESPONSE END ===')
-    console.log('URL:', req.originalUrl)
-    console.log('Set-Cookie at res.end:', res.getHeader('Set-Cookie'))
-    console.log('Session ID:', req.sessionID)
-
-    return originalEnd.apply(this, args)
-  }
-
-  next()
-})
+// Brute-force / cost ceilings - mounted before the route they guard.
+app.use('/api/auth/register', authLimiter)
+app.use('/api/auth/login', authLimiter)
+app.use('/api/ai-assistant', aiAssistantLimiter)
 
 app.use('/api/auth', authRoutes)
 app.use('/api', assessmentRoutes)
@@ -86,6 +82,12 @@ app.use('/api', patientRoutes)
 app.use('/api', aiAssistantRoutes)
 app.use('/api', careMissionRoutes)
 app.use('/api', checkInRoutes)
+app.use('/api', ancVisitRoutes)
+app.use('/api', homeVisitRoutes)
+app.use('/api', immunizationRoutes)
+app.use('/api', followUpRoutes)
+app.use('/api', pushNotificationRoutes)
+app.use('/api', adminRoutes)
 
 app.get('/api/health', (req, res) => {
   res.json({
@@ -137,10 +139,6 @@ app.get('/api/health/session', (req, res) => {
   )
 })
 
-/*
- * COOKIE DIAGNOSTIC
- * Tests whether Express/Vercel can send a normal cookie.
- */
 app.get('/api/health/cookie', (req, res) => {
   res.cookie('test_cookie', 'hello123', {
     httpOnly: true,
@@ -155,10 +153,6 @@ app.get('/api/health/cookie', (req, res) => {
   })
 })
 
-/*
- * SESSION COOKIE DIAGNOSTIC
- * Tests express-session + MySQL session store.
- */
 app.get('/api/health/session-cookie', (req, res) => {
   req.session.test = 'hello123'
 
@@ -168,12 +162,8 @@ app.get('/api/health/session-cookie', (req, res) => {
 
       return res.status(500).json({
         status: 'error',
-        message: err.message,
       })
     }
-
-    console.log('SESSION SAVED SUCCESSFULLY')
-    console.log('SESSION ID:', req.sessionID)
 
     res.json({
       status: 'ok',

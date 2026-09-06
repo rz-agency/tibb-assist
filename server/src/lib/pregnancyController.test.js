@@ -19,10 +19,15 @@ let pregnanciesResult = []
 let createdPregnancyArgs = null
 let updatedPregnancyArgs = null
 let findFirstResult = null
+let lhwResult = null
+let patientProfileFindFirstResult = null
+let patientProfileFindManyResult = []
 
 const mockPrisma = {
   patientProfile: {
     findUnique: async () => patientProfileResult,
+    findFirst: async () => patientProfileFindFirstResult,
+    findMany: async () => patientProfileFindManyResult,
   },
   pregnancy: {
     findMany: async () => pregnanciesResult,
@@ -35,6 +40,9 @@ const mockPrisma = {
       updatedPregnancyArgs = args
       return { id: 11, ...args.data }
     },
+  },
+  lhw: {
+    findUnique: async () => lhwResult,
   },
 }
 
@@ -63,8 +71,8 @@ function mockRes() {
   }
 }
 
-function mockReq(body = {}, params = {}) {
-  return { user: { id: 1, role: 'WOMAN' }, body, params }
+function mockReq(body = {}, params = {}, query = {}) {
+  return { user: { id: 1, role: 'WOMAN' }, body, params, query }
 }
 
 function resetMocks() {
@@ -73,6 +81,9 @@ function resetMocks() {
   createdPregnancyArgs = null
   updatedPregnancyArgs = null
   findFirstResult = null
+  lhwResult = null
+  patientProfileFindFirstResult = null
+  patientProfileFindManyResult = []
 }
 
 /** Pregnancy DB row at the given completed gestational week (weeks * 7 + 1 days ago). */
@@ -213,4 +224,48 @@ test('update: pregnancy owned by another patient → 404', async () => {
 
   assert.equal(res.statusCode, 404)
   assert.equal(res.body.error, 'Pregnancy not found.')
+})
+
+// ---------- LHW access to GET /api/pregnancies ----------
+
+test('list: LHW without Lhw row → 404', async () => {
+  resetMocks()
+  lhwResult = null
+  const res = mockRes()
+  await listPregnancies({ user: { id: 2, role: 'LHW' }, body: {}, params: {}, query: {} }, res)
+  assert.equal(res.statusCode, 404)
+  assert.match(res.body.error, /LHW profile/i)
+})
+
+test('list: LHW with patientId query scopes to that patient', async () => {
+  resetMocks()
+  lhwResult = { id: 10 }
+  patientProfileFindFirstResult = { id: 42 } // assigned patient
+  pregnanciesResult = [pregnancyAtWeek(24)]
+  const res = mockRes()
+  await listPregnancies({ user: { id: 2, role: 'LHW' }, body: {}, params: {}, query: { patientId: '42' } }, res)
+  assert.equal(res.statusCode, null)
+  assert.equal(res.body.pregnancies.length, 1)
+  assert.equal(res.body.pregnancies[0].gestationalWeeks, 24)
+})
+
+test('list: LHW with unassigned patientId → 403', async () => {
+  resetMocks()
+  lhwResult = { id: 10 }
+  patientProfileFindFirstResult = null // not assigned
+  const res = mockRes()
+  await listPregnancies({ user: { id: 2, role: 'LHW' }, body: {}, params: {}, query: { patientId: '99' } }, res)
+  assert.equal(res.statusCode, 403)
+  assert.match(res.body.error, /not assigned/i)
+})
+
+test('list: LHW without patientId returns all assigned patients’ pregnancies', async () => {
+  resetMocks()
+  lhwResult = { id: 10 }
+  patientProfileFindManyResult = [{ id: 42 }, { id: 43 }]
+  pregnanciesResult = [pregnancyAtWeek(20), pregnancyAtWeek(30)]
+  const res = mockRes()
+  await listPregnancies({ user: { id: 2, role: 'LHW' }, body: {}, params: {}, query: {} }, res)
+  assert.equal(res.statusCode, null)
+  assert.equal(res.body.pregnancies.length, 2)
 })

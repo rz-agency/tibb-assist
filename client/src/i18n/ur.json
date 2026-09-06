@@ -372,6 +372,31 @@
     "CANCELLED": "منسوخ"
   }
 ,
+  "followUp": {
+    "title": "فالو اپس",
+    "sortLabel": "فالو اپس کی ترتیب",
+    "sortByDueDate": "تاریخ کے مطابق",
+    "sortByPatient": "مریضہ کے نام کے مطابق",
+    "loading": "فالو اپس لوڈ ہو رہے ہیں...",
+    "loadingStats": "اعداد و شمار لوڈ ہو رہے ہیں...",
+    "nonePending": "کوئی زیرِ التوا فالو اپ نہیں۔",
+    "overdue": "میعاد گزر چکی",
+    "dueThisWeek": "اس ہفتے واجب الادا",
+    "upcoming": "آنے والے",
+    "daysOverdue": "{{days}} دن سے تاخیر",
+    "markComplete": "مکمل کریں",
+    "typeHomeVisit": "گھر کا دورہ",
+    "typeAncVisit": "ماقبلِ ولادت وزٹ",
+    "typeReferralCheck": "ریفرل کی جانچ",
+    "typeCheckInReminder": "چیک اپ کی یاد دہانی",
+    "typeOther": "فالو اپ",
+    "statAssigned": "مقرر کردہ خواتین",
+    "statOpenRed": "جاری ہنگامی مشنز",
+    "statOverdue": "میعاد گزری فالو اپس",
+    "statHomeVisits": "اس ماہ گھریلو دورے",
+    "statReferralsClosed": "اس ماہ بند ہوئے ریفرلز"
+  }
+,
   "profile": {
     "eyebrow": "آپ کی پروفائل",
     "pageTitle": "ذاتی معلومات",

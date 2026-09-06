@@ -1,4 +1,4 @@
-const bcrypt = require('bcryptjs')
+ const bcrypt = require('bcryptjs')
 const prisma = require('../lib/prisma')
 
 const safeUserSelect = {
@@ -58,8 +58,8 @@ async function register(req, res) {
     return res.status(400).json({ error: 'Only WOMAN and LHW accounts can be registered publicly.' })
   }
 
-  if (role === 'WOMAN' && (typeof fullName !== 'string' || !fullName.trim())) {
-    return res.status(400).json({ error: 'fullName is required for WOMAN registration.' })
+  if ((role === 'WOMAN' || role === 'LHW') && (typeof fullName !== 'string' || !fullName.trim())) {
+    return res.status(400).json({ error: 'fullName is required for WOMAN and LHW registration.' })
   }
 
   try {
@@ -82,6 +82,14 @@ async function register(req, res) {
             fullName: fullName.trim(),
             district: typeof district === 'string' && district.trim() ? district.trim() : null,
             province: typeof province === 'string' && province.trim() ? province.trim() : null,
+          },
+        })
+      } else if (role === 'LHW') {
+        await transaction.lhw.create({
+          data: {
+            userId: createdUser.id,
+            fullName: fullName.trim(),
+            region: 'OTHER',
           },
         })
       }
@@ -121,14 +129,23 @@ async function login(req, res) {
     if (!user || !user.isActive || !(await bcrypt.compare(password, user.passwordHash))) {
       return res.status(401).json({ error: 'Invalid email or password.' })
     }
-     const safeUser = getSafeUser(user)
-    req.session.user = safeUser
-    req.session.save((sessionError) => {
-      if (sessionError) {
-        console.error('SESSION SAVE ERROR:', sessionError)
-        return res.status(500).json({ error: 'Failed to persist session.', details: sessionError.message })
+
+    const safeUser = getSafeUser(user)
+    // Regenerate the session id before assigning the authenticated user
+    // to prevent session fixation attacks.
+    req.session.regenerate((regenerateError) => {
+      if (regenerateError) {
+        console.error(regenerateError)
+        return res.status(500).json({ error: 'Login failed.' })
       }
-      return res.json({ user: safeUser })
+      req.session.user = safeUser
+      req.session.save((sessionError) => {
+        if (sessionError) {
+          console.error('SESSION SAVE ERROR:', sessionError)
+          return res.status(500).json({ error: 'Failed to persist session.', details: sessionError.message })
+        }
+        return res.json({ user: safeUser })
+      })
     })
   } catch (error) {
     console.error(error)

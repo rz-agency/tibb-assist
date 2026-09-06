@@ -1,14 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getCareMissions, getCareMission, updateChecklistItem } from '../api/api'
+import { RISK_LABEL_KEY, cleanSymptomLabel } from '../utils/riskLabels'
 import StatusMessage from '../components/StatusMessage'
-
-const RISK_LABEL_KEY = { GREEN: 'assessment.riskGreen', YELLOW: 'assessment.riskYellow', RED: 'assessment.riskRed' }
-
-function cleanSymptomLabel(name) {
-  const cleaned = name.replace(/^(Severe|Heavy)\s+/i, '').trim()
-  return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : cleaned
-}
 
 function formatDate(value) {
   return new Date(value).toLocaleString()
@@ -147,6 +141,16 @@ function CareMissionPage({ user }) {
                 <div>
                   <span className="detail-label">{t('history.inputMethod')}</span>
                   <span>{selectedMission.assessment.inputMethod}</span>
+                </div>
+              )}
+              {selectedMission.assessment.assessedByUser?.role === 'LHW' && (
+                <div>
+                  <span className="detail-label">{t('careMission.loggedBy', { defaultValue: 'Logged by' })}</span>
+                  <span>
+                    <span className="inline-block rounded-full bg-[var(--teal-100)] px-2 py-0.5 text-[10px] font-semibold text-[var(--teal-800)]">
+                      {t('history.loggedByLhw', { defaultValue: 'Logged by LHW' })}
+                    </span>
+                  </span>
                 </div>
               )}
             </div>

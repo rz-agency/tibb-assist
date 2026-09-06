@@ -1,20 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getAssessment, getAssessments } from '../api/api'
+import { RISK_LABEL_KEY, cleanSymptomLabel } from '../utils/riskLabels'
 import StatusMessage from '../components/StatusMessage'
 import { ClipboardIcon, ShieldIcon } from '../components/Illustrations'
 
-const RISK_LABEL_KEY = { GREEN: 'assessment.riskGreen', YELLOW: 'assessment.riskYellow', RED: 'assessment.riskRed' }
 const INPUT_METHOD_KEY = { VISUAL: 'history.methodVisual', VOICE: 'history.methodVoice', AI: 'history.methodAi', OTHER: 'history.methodOther' }
 
 const RESULT_CODE_MESSAGES = {
   PRETERM_LABOR_RISK: { explanationKey: 'assessment.pretermLaborRiskExplanation', actionKey: 'assessment.pretermLaborRiskAction' },
   POSTTERM_PREGNANCY: { explanationKey: 'assessment.posttermPregnancyExplanation', actionKey: 'assessment.posttermPregnancyAction' },
-}
-
-function cleanSymptomLabel(name) {
-  const cleaned = name.replace(/^(Severe|Heavy)\s+/i, '').trim()
-  return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : cleaned
 }
 
 function formatDate(value) {
@@ -69,6 +64,11 @@ function AssessmentHistory({ onNavigate }) {
                 {t(RISK_LABEL_KEY[selected.riskLevel])}
               </p>
               <p className="text-sm text-[var(--text-secondary)]">{t(INPUT_METHOD_KEY[selected.inputMethod] || 'history.methodOther', selected.inputMethod)} &middot; {selected.patient.fullName}</p>
+              {selected.assessedByUser?.role === 'LHW' && (
+                <span className="mt-2 inline-block rounded-full bg-[var(--teal-100)] px-2 py-0.5 text-[10px] font-semibold text-[var(--teal-800)]">
+                  {t('history.loggedByLhw', { defaultValue: 'Logged by LHW' })}
+                </span>
+              )}
             </div>
           </div>
 
@@ -145,6 +145,11 @@ function AssessmentHistory({ onNavigate }) {
                     {assessment.resultCode === 'PRETERM_LABOR_RISK'
                       ? t('assessment.pretermLaborRiskExplanation').split('.')[0]
                       : t('assessment.posttermPregnancyExplanation').split('.')[0]}
+                  </span>
+                )}
+                {assessment.assessedByUser?.role === 'LHW' && (
+                  <span className="rounded-full bg-[var(--teal-100)] px-2 py-0.5 text-[10px] font-semibold text-[var(--teal-800)]">
+                    {t('history.loggedByLhw', { defaultValue: 'Logged by LHW' })}
                   </span>
                 )}
               </div>

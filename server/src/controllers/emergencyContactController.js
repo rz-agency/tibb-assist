@@ -37,18 +37,18 @@ async function verifyPatientAccess(patientId, user) {
     select: { id: true, userId: true, assignedLhwId: true },
   })
 
-  if (!patient) return null
+  if (!patient) return { exists: false, accessible: false }
 
-  if (user.role === 'WOMAN' && patient.userId === user.id) return patient
+  if (user.role === 'WOMAN' && patient.userId === user.id) return { exists: true, accessible: true, patient }
   if (user.role === 'LHW' && patient.assignedLhwId) {
     const lhw = await prisma.lhw.findUnique({
       where: { userId: user.id },
       select: { id: true },
     })
-    if (lhw && patient.assignedLhwId === lhw.id) return patient
+    if (lhw && patient.assignedLhwId === lhw.id) return { exists: true, accessible: true, patient }
   }
 
-  return null
+  return { exists: true, accessible: false }
 }
 
 async function verifyContactAccess(contactId, user) {
@@ -57,10 +57,12 @@ async function verifyContactAccess(contactId, user) {
     select: { id: true, patientId: true },
   })
 
-  if (!contact) return null
+  if (!contact) return { exists: false, accessible: false }
 
-  const patient = await verifyPatientAccess(contact.patientId, user)
-  return patient ? contact : null
+  const patientCheck = await verifyPatientAccess(contact.patientId, user)
+  if (!patientCheck.exists) return { exists: false, accessible: false }
+  if (!patientCheck.accessible) return { exists: true, accessible: false }
+  return { exists: true, accessible: true, contact }
 }
 
 function getContactData(body) {
@@ -82,9 +84,12 @@ async function listContacts(req, res) {
   if (!patientId) return res.status(400).json({ error: 'patientId must be a positive integer.' })
 
   try {
-    const patient = await verifyPatientAccess(patientId, req.user)
-    if (!patient) {
-      return res.status(403).json({ error: 'You do not have permission to view these emergency contacts.' })
+    const check = await verifyPatientAccess(patientId, req.user)
+    if (!check.exists) {
+      return res.status(404).json({ error: 'Patient not found.' })
+    }
+    if (!check.accessible) {
+      return res.status(404).json({ error: 'Emergency contacts not found.' })
     }
 
     const contacts = await prisma.emergencyContact.findMany({
@@ -107,9 +112,12 @@ async function createContact(req, res) {
   if (parsed.error) return res.status(400).json({ error: parsed.error })
 
   try {
-    const patient = await verifyPatientAccess(patientId, req.user)
-    if (!patient) {
-      return res.status(403).json({ error: 'You do not have permission to manage these emergency contacts.' })
+    const check = await verifyPatientAccess(patientId, req.user)
+    if (!check.exists) {
+      return res.status(404).json({ error: 'Patient not found.' })
+    }
+    if (!check.accessible) {
+      return res.status(404).json({ error: 'Emergency contacts not found.' })
     }
 
     if (parsed.data.isPrimary) {
@@ -138,14 +146,17 @@ async function updateContact(req, res) {
   if (parsed.error) return res.status(400).json({ error: parsed.error })
 
   try {
-    const contact = await verifyContactAccess(contactId, req.user)
-    if (!contact) {
-      return res.status(403).json({ error: 'You do not have permission to modify this emergency contact.' })
+    const check = await verifyContactAccess(contactId, req.user)
+    if (!check.exists) {
+      return res.status(404).json({ error: 'Emergency contact not found.' })
+    }
+    if (!check.accessible) {
+      return res.status(404).json({ error: 'Emergency contact not found.' })
     }
 
     if (parsed.data.isPrimary) {
       await prisma.emergencyContact.updateMany({
-        where: { patientId: contact.patientId, isPrimary: true, id: { not: contactId } },
+        where: { patientId: check.contact.patientId, isPrimary: true, id: { not: contactId } },
         data: { isPrimary: false },
       })
     }
@@ -167,9 +178,12 @@ async function deleteContact(req, res) {
   if (!contactId) return res.status(400).json({ error: 'Contact id must be a positive integer.' })
 
   try {
-    const contact = await verifyContactAccess(contactId, req.user)
-    if (!contact) {
-      return res.status(403).json({ error: 'You do not have permission to delete this emergency contact.' })
+    const check = await verifyContactAccess(contactId, req.user)
+    if (!check.exists) {
+      return res.status(404).json({ error: 'Emergency contact not found.' })
+    }
+    if (!check.accessible) {
+      return res.status(404).json({ error: 'Emergency contact not found.' })
     }
 
     await prisma.emergencyContact.delete({ where: { id: contactId } })

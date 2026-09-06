@@ -2,6 +2,8 @@ const prisma = require('../lib/prisma')
 const { getGestationalWeeks } = require('../lib/gestationalAge')
 const { getCheckInQuestionSet } = require('../lib/checkInQuestions')
 const { createAssessmentFromText } = require('../lib/aiAssessmentFlow')
+const { sendCheckInDueNotification } = require('../lib/pushService')
+const { sendCheckInDueSms } = require('../lib/smsService')
 
 const FREE_TEXT_MAX_LENGTH = 2000
 
@@ -17,6 +19,7 @@ async function getCheckInContext(userId) {
       id: true,
       assignedLhwId: true,
       dateOfBirth: true,
+      phone: true,
       pregnancies: {
         where: { pregnancyStatus: 'ACTIVE' },
         select: { id: true, lmpDate: true },
@@ -83,7 +86,18 @@ async function getDueStatus(req, res) {
       select: { id: true },
     })
 
-    return res.json({ due: !existing, gestationalWeek })
+    const due = !existing
+
+    // Best-effort push notification when a check-in becomes due for the
+    // first time this gestational week.  Deduplicated server-side via
+    // PushNotificationLog so repeated dashboard polls don't spam.
+    if (due) {
+      sendCheckInDueNotification(req.user.id, gestationalWeek).catch(() => {})
+      // SMS stretch goal: no-ops when provider env vars are not configured.
+      sendCheckInDueSms(patient.phone, gestationalWeek).catch(() => {})
+    }
+
+    return res.json({ due, gestationalWeek })
   } catch (error) {
     console.error('Check-in due error:', error.message)
     return res.status(500).json({ error: 'A database error occurred.' })

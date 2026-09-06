@@ -68,6 +68,20 @@ function isPostterm(weeks) {
 }
 
 /**
+ * Trimester number (1, 2, or 3) derived from completed gestational weeks.
+ *   Trimester 1: weeks 0–13
+ *   Trimester 2: weeks 14–27
+ *   Trimester 3: weeks 28+
+ * Returns null when weeks is null/undefined.
+ */
+function getTrimester(weeks) {
+  if (weeks == null) return null
+  if (weeks < 14) return 1
+  if (weeks < 28) return 2
+  return 3
+}
+
+/**
  * Naegele's rule: due date = LMP + 280 days (40 weeks).
  * Always produces a UTC-midnight Date so Prisma stores a clean date-only
  * value with no timezone drift.
@@ -95,6 +109,7 @@ function decoratePregnancy(pregnancy) {
     ...pregnancy,
     gestationalWeeks,
     isPostterm: gestationalWeeks != null ? isPostterm(gestationalWeeks) : null,
+    trimester: getTrimester(gestationalWeeks),
   }
 }
 
@@ -102,6 +117,7 @@ module.exports = {
   getGestationalWeeks,
   isPreterm,
   isPostterm,
+  getTrimester,
   calculateDueDate,
   toUTCDate,
   decoratePregnancy,

@@ -7,10 +7,10 @@ const { createCareMissionForAssessment } = require('./careMissionService')
  *
  * @param {object} opts
  * @param {object|null} opts.existingCareMission - If set, findUnique returns this (duplicate case)
- * @returns {{ tx: object, calls: { findUnique: Array, create: Array } }}
+ * @returns {{ tx: object, calls: { findUnique: Array, create: Array, followUpFindUnique: Array, followUpCreate: Array } }}
  */
 function createMockTx({ existingCareMission = null } = {}) {
-  const calls = { findUnique: [], create: [] }
+  const calls = { findUnique: [], create: [], followUpFindUnique: [], followUpCreate: [] }
 
   const tx = {
     careMission: {
@@ -31,6 +31,16 @@ function createMockTx({ existingCareMission = null } = {}) {
           createdAt: new Date(),
           updatedAt: new Date(),
         }
+      },
+    },
+    followUp: {
+      findUnique: async (args) => {
+        calls.followUpFindUnique.push(args)
+        return null
+      },
+      create: async (args) => {
+        calls.followUpCreate.push(args)
+        return { id: 77, ...args.data }
       },
     },
   }
@@ -205,6 +215,7 @@ test('copies patient assignedLhwId when one exists', async () => {
 
   await createCareMissionForAssessment(tx, {
     assessmentId: 900,
+    patientId: 5,
     riskLevel: 'YELLOW',
     assignedLhwId: 7,
     createdByUserId: 10,
@@ -218,12 +229,67 @@ test('assignedLhwId is null when patient has no LHW', async () => {
 
   await createCareMissionForAssessment(tx, {
     assessmentId: 1000,
+    patientId: 5,
     riskLevel: 'RED',
     assignedLhwId: null,
     createdByUserId: 10,
   })
 
   assert.equal(calls.create[0].data.assignedLhwId, null)
+})
+
+// ---------- LHW follow-up scheduling ----------
+
+test('RED mission also schedules an LHW follow-up 3 days out', async () => {
+  const { tx, calls } = createMockTx()
+
+  await createCareMissionForAssessment(tx, {
+    assessmentId: 1300,
+    patientId: 5,
+    riskLevel: 'RED',
+    assignedLhwId: 7,
+    createdByUserId: 10,
+  })
+
+  assert.equal(calls.followUpCreate.length, 1, 'exactly one follow-up is created')
+  const data = calls.followUpCreate[0].data
+  assert.equal(data.patientId, 5)
+  assert.equal(data.lhwId, 7)
+  assert.equal(data.type, 'HOME_VISIT')
+  assert.equal(data.relatedCareMissionId, 42)
+  const daysOut = (new Date(data.dueDate).getTime() - Date.now()) / 86400000
+  assert.ok(daysOut > 2.99 && daysOut < 3.01, 'follow-up is due ~3 days out')
+})
+
+test('YELLOW mission also schedules an LHW follow-up 7 days out', async () => {
+  const { tx, calls } = createMockTx()
+
+  await createCareMissionForAssessment(tx, {
+    assessmentId: 1400,
+    patientId: 5,
+    riskLevel: 'YELLOW',
+    assignedLhwId: 7,
+    createdByUserId: 10,
+  })
+
+  assert.equal(calls.followUpCreate.length, 1)
+  const daysOut = (new Date(calls.followUpCreate[0].data.dueDate).getTime() - Date.now()) / 86400000
+  assert.ok(daysOut > 6.99 && daysOut < 7.01, 'follow-up is due ~7 days out')
+})
+
+test('mission without an assigned LHW schedules no follow-up', async () => {
+  const { tx, calls } = createMockTx()
+
+  await createCareMissionForAssessment(tx, {
+    assessmentId: 1500,
+    patientId: 5,
+    riskLevel: 'RED',
+    assignedLhwId: null,
+    createdByUserId: 10,
+  })
+
+  assert.equal(calls.followUpCreate.length, 0, 'no follow-up without an owner')
+  assert.equal(calls.followUpFindUnique.length, 0, 'no follow-up lookup either')
 })
 
 // ---------- Duplicate protection ----------

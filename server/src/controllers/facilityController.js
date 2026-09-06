@@ -1,16 +1,6 @@
 const prisma = require('../lib/prisma')
 const { findNearbyFacilities } = require('../lib/placesService')
 
-const facilitySelect = {
-  id: true,
-  name: true,
-  facilityType: true,
-  address: true,
-  city: true,
-  phone: true,
-  isVerified: true,
-}
-
 /**
  * Return a numeric match score for a facility city against a patient's
  * district / province.  Lower is better:
@@ -101,23 +91,6 @@ async function getPatientLocation(userId) {
   }
 }
 
-async function listFacilities(req, res) {
-  try {
-    const facilities = await prisma.healthcareFacility.findMany({
-      select: facilitySelect,
-      orderBy: { name: 'asc' },
-    })
-
-    const location = await getPatientLocation(req.user.id)
-    const sorted = sortFacilitiesByPatientLocation(facilities, location)
-
-    return res.json({ facilities: sorted })
-  } catch (error) {
-    console.error(error)
-    return res.status(500).json({ error: 'A database error occurred.' })
-  }
-}
-
 /**
  * GET /api/facilities/nearby?lat=...&lng=...&radius=...
  * Proxies to OpenStreetMap Overpass via placesService.
@@ -148,10 +121,8 @@ async function getNearbyFacilities(req, res) {
 }
 
 module.exports = {
-  listFacilities,
   getNearbyFacilities,
   sortFacilitiesByPatientLocation,
   locationMatchScore,
   getPatientLocation,
-  facilitySelect,
 }

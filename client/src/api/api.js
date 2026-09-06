@@ -66,14 +66,12 @@ export const assignPatientToLhw = (patientId, lhwId) =>
     body: JSON.stringify({ lhwId }),
   })
 
-export const getFacilities = () => apiRequest('/facilities')
-
 export const getNearbyFacilities = (lat, lng, radius = 5000) =>
   apiRequest(`/facilities/nearby?lat=${lat}&lng=${lng}&radius=${radius}`).then(
     (response) => response.facilities,
   )
 
-export const getPregnancies = () => apiRequest('/pregnancies')
+export const getPregnancies = (patientId) => apiRequest(patientId ? `/pregnancies?patientId=${patientId}` : '/pregnancies')
 
 export const createPregnancy = (details) => apiRequest('/pregnancies', {
   method: 'POST',
@@ -167,3 +165,64 @@ export const submitCheckIn = (answers, freeTextNote) => apiRequest('/checkins', 
   method: 'POST',
   body: JSON.stringify({ answers, freeTextNote }),
 })
+
+export const getAncVisits = (pregnancyId) => apiRequest(`/anc-visits?pregnancyId=${pregnancyId}`)
+
+export const createAncVisit = (details) => apiRequest('/anc-visits', {
+  method: 'POST',
+  body: JSON.stringify(details),
+})
+
+export const updateAncVisit = (id, details) => apiRequest(`/anc-visits/${id}`, {
+  method: 'PUT',
+  body: JSON.stringify(details),
+})
+
+export const getHomeVisits = (patientId) => apiRequest(`/home-visits?patientId=${patientId}`)
+
+export const createHomeVisit = (details) => apiRequest('/home-visits', {
+  method: 'POST',
+  body: JSON.stringify(details),
+})
+
+export const getImmunizations = (patientId) => apiRequest(`/immunizations?patientId=${patientId}`)
+
+export const createImmunization = (details) => apiRequest('/immunizations', {
+  method: 'POST',
+  body: JSON.stringify(details),
+})
+
+export const getFollowUps = (includeCompleted = false) =>
+  apiRequest(`/follow-ups${includeCompleted ? '?includeCompleted=true' : ''}`)
+
+export const completeFollowUp = (id, notes) =>
+  apiRequest(`/follow-ups/${id}/complete`, {
+    method: 'POST',
+    body: JSON.stringify(notes ? { notes } : {}),
+  })
+
+export const getLhwStats = (userId) => apiRequest(`/lhws/${userId}/stats`)
+
+export const getLhwMonthlyReport = (userId) => apiRequest(`/lhws/${userId}/monthly-report`)
+
+// ── Admin endpoints ──────────────────────────────────────────────────
+
+export const getAdminLhwOverview = () => apiRequest('/admin/lhw-overview')
+
+export const getAdminMonthlyReport = (userId) => apiRequest(`/admin/monthly-report/${userId}`)
+
+// ── Push notifications ─────────────────────────────────────────────
+
+export const getVapidPublicKey = () => apiRequest('/push/vapid-public-key')
+
+export const subscribePush = (endpoint, keys) =>
+  apiRequest('/push/subscribe', {
+    method: 'POST',
+    body: JSON.stringify({ endpoint, keys }),
+  })
+
+export const unsubscribePush = (endpoint) =>
+  apiRequest('/push/unsubscribe', {
+    method: 'POST',
+    body: JSON.stringify({ endpoint }),
+  })

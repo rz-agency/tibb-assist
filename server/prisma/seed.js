@@ -50,7 +50,7 @@ async function main() {
       userId: womanUser.id,
       fullName: 'Demo Woman Sara',
       phone: '+923004445566',
-      age: 28,
+      dateOfBirth: new Date(1998, 0, 1),
       villageOrArea: 'Demo Village',
       district: 'Rawalpindi',
       province: 'Punjab',

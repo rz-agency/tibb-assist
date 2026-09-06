@@ -40,11 +40,9 @@ function Register({ onLogin, onShowLogin }) {
             <p className="mt-3 text-[var(--text-secondary)]">{t('auth.registerSubtitle')}</p>
           </div>
           <form className="space-y-5" onSubmit={submit}>
-            {form.role === 'WOMAN' && (
-              <label className="form-label">{t('auth.fullName')}
-                <input className="form-input" name="fullName" type="text" value={form.fullName} onChange={updateField} required />
-              </label>
-            )}
+            <label className="form-label">{t('auth.fullName')}
+              <input className="form-input" name="fullName" type="text" value={form.fullName} onChange={updateField} required />
+            </label>
             <label className="form-label">{t('auth.email')}
               <input className="form-input" name="email" type="email" value={form.email} onChange={updateField} required />
             </label>
@@ -83,3 +81,4 @@ function Register({ onLogin, onShowLogin }) {
 }
 
 export default Register
+

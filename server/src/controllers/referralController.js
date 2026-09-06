@@ -9,6 +9,7 @@ const {
   buildNearbyFacilityData,
   resolveNearbyFacility,
 } = require('../lib/nearbyFacilityResolver')
+const { createFollowUpForReferral } = require('../lib/followUpService')
 
 // Status groups for list filtering.
 const activeStatuses = [
@@ -243,14 +244,15 @@ async function getReferral(req, res) {
 
   try {
     const patientFilter = await getAccessiblePatientFilter(req.user)
-    if (!patientFilter) {
-      return res.status(403).json({ error: 'You do not have permission to view referrals.' })
-    }
 
-    const referral = await prisma.referral.findFirst({
-      where: { id: referralId, patient: patientFilter },
-      select: detailSelect,
-    })
+    // Combine existence and access into a single query: a user who lacks
+    // access gets the same 404 as if the referral didn't exist.
+    const referral = patientFilter
+      ? await prisma.referral.findFirst({
+          where: { id: referralId, patient: patientFilter },
+          select: detailSelect,
+        })
+      : null
 
     if (!referral) {
       return res.status(404).json({ error: 'Referral not found.' })
@@ -297,10 +299,12 @@ async function updateReferralStatus(req, res) {
       return res.status(403).json({ error: 'You do not have permission to modify referrals.' })
     }
 
-    // Fetch the current referral with access check.
+    // Fetch the current referral with access check. The patient's LHW
+    // assignment is needed to schedule the follow-up task when the status
+    // becomes FOLLOW_UP_DUE.
     const referral = await prisma.referral.findFirst({
       where: { id: referralId, patient: patientFilter },
-      select: { id: true, status: true },
+      select: { id: true, status: true, patientId: true, patient: { select: { assignedLhwId: true } } },
     })
 
     if (!referral) {
@@ -364,6 +368,16 @@ async function updateReferralStatus(req, res) {
             },
           })
         }
+      }
+
+      // When the referral becomes FOLLOW_UP_DUE, schedule the LHW
+      // referral-check task (1 day out — see followUpService.js).
+      if (nextStatus === 'FOLLOW_UP_DUE') {
+        await createFollowUpForReferral(tx, {
+          referralId,
+          patientId: referral.patientId,
+          assignedLhwId: referral.patient?.assignedLhwId ?? null,
+        })
       }
 
       return updatedReferral

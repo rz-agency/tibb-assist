@@ -7,14 +7,16 @@ const RISK_PRIORITY = { GREEN: 0, YELLOW: 1, RED: 2 }
  * Per-symptom risk matrix. Each rule maps (answerStatus, severity) → riskLevel.
  *
  * Rules:
- *   - Heavy bleeding:      ABSENT=GREEN, UNKNOWN=YELLOW, PRESENT=RED; SEVERE → emergency
- *   - Severe headache:     ABSENT=GREEN, UNKNOWN=YELLOW, MILD=YELLOW, MODERATE=RED, SEVERE=RED+emergency
- *   - Abdominal pain:      ABSENT=GREEN, UNKNOWN/MILD=YELLOW, MODERATE=RED, SEVERE=RED+emergency
- *   - Fever:               ABSENT=GREEN, UNKNOWN/MILD=YELLOW, MODERATE=RED, SEVERE=RED+emergency
- *   - Blurred vision:      ABSENT=GREEN, UNKNOWN=YELLOW, PRESENT=RED+emergency
+ *   - Heavy bleeding:         ABSENT=GREEN, UNKNOWN=YELLOW, PRESENT=RED; SEVERE → emergency
+ *   - Severe headache:        ABSENT=GREEN, UNKNOWN=YELLOW, MILD=YELLOW, MODERATE=RED, SEVERE=RED+emergency
+ *   - Abdominal pain:         ABSENT=GREEN, UNKNOWN/MILD=YELLOW, MODERATE=RED, SEVERE=RED+emergency
+ *   - Severe abdominal pain:  ABSENT=GREEN, UNKNOWN/MILD=YELLOW, MODERATE=RED, SEVERE=RED+emergency
+ *                               (also a labor-sign trigger — preterm override to RED is preserved)
+ *   - Fever:                  ABSENT=GREEN, UNKNOWN/MILD=YELLOW, MODERATE=RED, SEVERE=RED+emergency
+ *   - Blurred vision:         ABSENT=GREEN, UNKNOWN=YELLOW, PRESENT=RED+emergency
  *   - Reduced fetal movement: ABSENT=GREEN, UNKNOWN=YELLOW, PRESENT=RED+emergency
- *   - Convulsions/fits:    ABSENT=GREEN, UNKNOWN=YELLOW, PRESENT=RED+emergency
- *   - Breathing difficulty: ABSENT=GREEN, UNKNOWN/MILD=YELLOW, MODERATE=RED, SEVERE=RED+emergency
+ *   - Convulsions/fits:       ABSENT=GREEN, UNKNOWN=YELLOW, PRESENT=RED+emergency
+ *   - Breathing difficulty:   ABSENT=GREEN, UNKNOWN/MILD=YELLOW, MODERATE=RED, SEVERE=RED+emergency
  */
 const RULES = {
   heavy_bleeding: {
@@ -32,6 +34,14 @@ const RULES = {
     emergencySeverity: ['SEVERE'],
   },
   abdominal_pain: {
+    ABSENT: 'GREEN',
+    UNKNOWN: 'YELLOW',
+    MILD: 'YELLOW',
+    MODERATE: 'RED',
+    SEVERE: 'RED',
+    emergencySeverity: ['SEVERE'],
+  },
+  severe_abdominal_pain: {
     ABSENT: 'GREEN',
     UNKNOWN: 'YELLOW',
     MILD: 'YELLOW',
@@ -111,9 +121,6 @@ function evaluateSymptom(code, answerStatus, severity) {
   return { riskLevel, isEmergency }
 }
 
-// NOTE: severe_abdominal_pain is currently a binary labor-sign trigger only — it is not
-// independently severity-graded like other warning signs outside of preterm-labor
-// context. Documented as future work.
 // Symptom codes representing pain, contractions, or fluid leak.
 // When any of these are PRESENT in a preterm pregnancy the risk engine
 // forces RED with reason "preterm_labor_risk".
