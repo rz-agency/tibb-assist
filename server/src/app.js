@@ -33,6 +33,7 @@ app.use(cors({
 }))
 
 app.use(express.json({ limit: '5mb' }))
+
 app.use(session({
   name: 'tibbAssist.sid',
   secret: process.env.SESSION_SECRET,
@@ -46,6 +47,7 @@ app.use(session({
     maxAge: 24 * 60 * 60 * 1000,
   },
 }))
+
 app.use('/api/auth', authRoutes)
 app.use('/api', assessmentRoutes)
 app.use('/api', profileRoutes)
@@ -92,7 +94,30 @@ app.get('/api/health/session', (req, res) => {
         code: err.code || null,
       })
     }
-    res.json({ status: 'ok', message: 'Session store write succeeded.' })
+
+    res.json({
+      status: 'ok',
+      message: 'Session store write succeeded.'
+    })
+  })
+})
+
+/*
+ * COOKIE DIAGNOSTIC
+ * This deliberately does NOT use the session store or database.
+ * It tests whether Vercel/Express can send a normal Set-Cookie header.
+ */
+app.get('/api/health/cookie', (req, res) => {
+  res.cookie('test_cookie', 'hello123', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    maxAge: 60000,
+  })
+
+  res.json({
+    status: 'ok',
+    message: 'Synchronous test cookie was set.'
   })
 })
 
