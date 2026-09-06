@@ -121,10 +121,15 @@ async function login(req, res) {
     if (!user || !user.isActive || !(await bcrypt.compare(password, user.passwordHash))) {
       return res.status(401).json({ error: 'Invalid email or password.' })
     }
-
-    const safeUser = getSafeUser(user)
+     const safeUser = getSafeUser(user)
     req.session.user = safeUser
-    return res.json({ user: safeUser })
+    req.session.save((sessionError) => {
+      if (sessionError) {
+        console.error('SESSION SAVE ERROR:', sessionError)
+        return res.status(500).json({ error: 'Failed to persist session.', details: sessionError.message })
+      }
+      return res.json({ user: safeUser })
+    })
   } catch (error) {
     console.error(error)
     return res.status(500).json({ error: 'Login failed.' })
