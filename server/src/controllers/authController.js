@@ -1,4 +1,4 @@
-const bcrypt = require('bcryptjs')
+ const bcrypt = require('bcryptjs')
 const prisma = require('../lib/prisma')
 
 const safeUserSelect = {
@@ -139,7 +139,13 @@ async function login(req, res) {
         return res.status(500).json({ error: 'Login failed.' })
       }
       req.session.user = safeUser
-      return res.json({ user: safeUser })
+      req.session.save((sessionError) => {
+        if (sessionError) {
+          console.error('SESSION SAVE ERROR:', sessionError)
+          return res.status(500).json({ error: 'Failed to persist session.', details: sessionError.message })
+        }
+        return res.json({ user: safeUser })
+      })
     })
   } catch (error) {
     console.error(error)
