@@ -3,6 +3,8 @@ const { calculateRiskAssessment } = require('../lib/riskAssessment')
 const { createCareMissionForAssessment } = require('../lib/careMissionService')
 const { getGestationalWeeks } = require('../lib/gestationalAge')
 const { computeAgeRiskNote } = require('./profileController')
+const { sendRedAlertToLhw } = require('../lib/pushService')
+const { sendRedAlertSms } = require('../lib/smsService')
 
 const inputMethods = ['VISUAL', 'VOICE', 'OTHER']
 const answerStatuses = ['PRESENT', 'ABSENT', 'UNKNOWN']
@@ -24,6 +26,12 @@ const assessmentInclude = {
     },
   },
   pregnancy: true,
+  assessedByUser: {
+    select: {
+      id: true,
+      role: true,
+    },
+  },
   assessmentSymptoms: {
     select: {
       id: true,
@@ -247,6 +255,7 @@ async function createAssessment(req, res) {
 
       await createCareMissionForAssessment(tx, {
         assessmentId: created.id,
+        patientId,
         riskLevel: riskAssessment.riskLevel,
         assignedLhwId: patient.assignedLhwId ?? null,
         createdByUserId: req.user.id,
@@ -256,6 +265,26 @@ async function createAssessment(req, res) {
     })
 
     const ageRiskNote = computeAgeRiskNote(patient.dateOfBirth)
+
+    // Best-effort RED alert to the assigned LHW (push + optional SMS).
+    // Fired after the transaction commits so a push failure never rolls
+    // back the assessment.  Degrades gracefully when push/SMS are not
+    // configured or the LHW has no subscription.
+    if (riskAssessment.riskLevel === 'RED' && patient.assignedLhwId) {
+      sendRedAlertToLhw(patient.assignedLhwId, {
+        patientId,
+        assessmentId: assessment.id,
+      }).catch(() => {})
+      // SMS stretch goal: resolve LHW phone separately (best-effort).
+      prisma.lhw.findUnique({
+        where: { id: patient.assignedLhwId },
+        select: { phone: true },
+      }).then((lhwRow) => {
+        if (lhwRow && lhwRow.phone) {
+          sendRedAlertSms(lhwRow.phone, `Patient #${patientId}`).catch(() => {})
+        }
+      }).catch(() => {})
+    }
 
     return res.status(201).json({ assessment, ageRiskNote })
   } catch (error) {
@@ -269,14 +298,15 @@ async function getAssessment(req, res) {
 
   try {
     const accessFilter = await getAssessmentAccessFilter(req.user)
-    if (!accessFilter) {
-      return res.status(403).json({ error: 'You do not have permission to view assessments.' })
-    }
 
-    const assessment = await prisma.assessment.findFirst({
-      where: { id: assessmentId, ...accessFilter },
-      include: assessmentInclude,
-    })
+    // Combine existence and access into a single query: a user who lacks
+    // access gets the same 404 as if the assessment didn't exist.
+    const assessment = accessFilter
+      ? await prisma.assessment.findFirst({
+          where: { id: assessmentId, ...accessFilter },
+          include: assessmentInclude,
+        })
+      : null
 
     if (!assessment) return res.status(404).json({ error: 'Assessment not found.' })
     return res.json({ assessment })

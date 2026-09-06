@@ -1,7 +1,11 @@
 const prisma = require('../lib/prisma')
 const { decoratePregnancy } = require('../lib/gestationalAge')
+const { suggestNextDose } = require('../lib/ttSchedule')
 
 const VALID_BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+
+// Same active-mission definition as careMissionController.js.
+const activeCareMissionStatuses = ['OPEN', 'IN_PROGRESS', 'ESCALATED']
 
 /**
  * Match Pakistani phone numbers: 03XXXXXXXXX or +923XXXXXXXXX (with optional
@@ -41,7 +45,6 @@ const patientProfileSelect = {
   userId: true,
   fullName: true,
   phone: true,
-  age: true,
   dateOfBirth: true,
   address: true,
   bloodGroup: true,
@@ -92,7 +95,7 @@ function serializePatientProfile(profile) {
   const computedAge = computeAgeFromDob(profile.dateOfBirth)
   return {
     ...profile,
-    computedAge: computedAge ?? profile.age ?? null,
+    computedAge,
     ageRiskNote: computeAgeRiskNote(profile.dateOfBirth),
     pregnancies: profile.pregnancies.map(decoratePregnancy),
   }
@@ -122,7 +125,21 @@ async function getPatientProfile(req, res) {
     })
 
     if (!profile) return res.status(404).json({ error: 'Patient profile not found.' })
-    return res.json(serializePatientProfile(profile))
+
+    // Enrich with next TT immunization due date for the dashboard banner.
+    const ttDoses = await prisma.immunization.findMany({
+      where: { patientId: profile.id, vaccineName: 'TT' },
+      select: { doseNumber: true, dateAdministered: true },
+      orderBy: { doseNumber: 'asc' },
+    })
+    const ttSuggestion = suggestNextDose(ttDoses)
+    const serialized = serializePatientProfile(profile)
+    return res.json({
+      ...serialized,
+      nextImmunizationDue: ttSuggestion.nextDoseNumber
+        ? { doseNumber: ttSuggestion.nextDoseNumber, suggestedDate: ttSuggestion.suggestedDate }
+        : null,
+    })
   } catch (error) {
     return handleDatabaseError(error, res)
   }
@@ -151,23 +168,28 @@ async function savePatientProfile(req, res) {
     return res.status(400).json({ error: 'emergencyContactPhone must be a valid Pakistani number (e.g. 03XXXXXXXXX or +923XXXXXXXXX).' })
   }
 
-  // Derive age from dateOfBirth when provided
-  let derivedAge = null
+  // Derive age from dateOfBirth; if only an explicit age is submitted
+  // (legacy clients), approximate dateOfBirth as January 1 of the year
+  // that would make them that age.
+  let resolvedDob = null
   if (dateOfBirth) {
     const dobDate = new Date(dateOfBirth)
     if (isNaN(dobDate.getTime())) {
       return res.status(400).json({ error: 'dateOfBirth must be a valid date.' })
     }
-    derivedAge = computeAgeFromDob(dobDate)
+    const derivedAge = computeAgeFromDob(dobDate)
     if (derivedAge === null || derivedAge < 12 || derivedAge > 60) {
       return res.status(400).json({ error: 'Age must be between 12 and 60 years.' })
     }
+    resolvedDob = dobDate
   } else if (age !== undefined && age !== null) {
-    // Backward compat: allow explicit age when no dateOfBirth is set
     const numericAge = Number(age)
     if (!Number.isInteger(numericAge) || numericAge < 12 || numericAge > 60) {
       return res.status(400).json({ error: 'Age must be between 12 and 60 years.' })
     }
+    // Approximate: January 1 of the year that would make them this age.
+    const year = new Date().getFullYear() - numericAge
+    resolvedDob = new Date(year, 0, 1)
   }
 
   if (bloodGroup !== undefined && bloodGroup !== null && !VALID_BLOOD_GROUPS.includes(bloodGroup)) {
@@ -181,8 +203,7 @@ async function savePatientProfile(req, res) {
   const data = {
     fullName: fullName.trim(),
     phone: phone ?? null,
-    age: derivedAge ?? (age !== undefined ? (age ?? null) : undefined),
-    dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+    dateOfBirth: resolvedDob ?? undefined,
     address: address ?? null,
     bloodGroup: bloodGroup ?? null,
     emergencyContactName: emergencyContactName ?? null,
@@ -226,7 +247,7 @@ async function getLhwProfile(req, res) {
             userId: true,
             fullName: true,
             phone: true,
-            age: true,
+            dateOfBirth: true,
             villageOrArea: true,
             district: true,
             province: true,
@@ -236,7 +257,20 @@ async function getLhwProfile(req, res) {
     })
 
     if (!profile) return res.status(404).json({ error: 'LHW profile not found.' })
-    return res.json(profile)
+
+    // Enrich assigned patients with lastHomeVisitDate for visit-gap sorting.
+    const enrichedPatients = await Promise.all(
+      profile.assignedPatients.map(async (patient) => {
+        const lastVisit = await prisma.homeVisit.findFirst({
+          where: { patientId: patient.id },
+          orderBy: { visitDate: 'desc' },
+          select: { visitDate: true },
+        })
+        return { ...patient, lastHomeVisitDate: lastVisit?.visitDate ?? null }
+      }),
+    )
+
+    return res.json({ ...profile, assignedPatients: enrichedPatients })
   } catch (error) {
     return handleDatabaseError(error, res)
   }
@@ -272,11 +306,83 @@ async function saveLhwProfile(req, res) {
   }
 }
 
+// ---------- GET /api/lhws/:userId/stats ----------
+
+/**
+ * LHW workload aggregates — all real Prisma count queries scoped to the
+ * LHW's assigned patients (access-filter pattern: the patient chain is the
+ * source of truth, not the snapshot assignedLhwId on CareMission).
+ *
+ * "This month" boundaries use the server's local calendar month; "overdue"
+ * means a PENDING follow-up whose due date is before today.
+ */
+async function getLhwStats(req, res) {
+  const userId = parseId(req.params.userId)
+  if (!userId) return res.status(400).json({ error: 'userId must be a positive integer.' })
+
+  try {
+    const lhw = await prisma.lhw.findUnique({
+      where: { userId },
+      select: { id: true },
+    })
+
+    if (!lhw) return res.status(404).json({ error: 'LHW profile not found.' })
+
+    const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    const patientFilter = { assignedLhwId: lhw.id }
+
+    const [
+      assignedPatients,
+      openRedCareMissions,
+      overdueFollowUps,
+      homeVisitsThisMonth,
+      referralsClosedThisMonth,
+    ] = await Promise.all([
+      prisma.patientProfile.count({ where: patientFilter }),
+      prisma.careMission.count({
+        where: {
+          riskLevel: 'RED',
+          status: { in: activeCareMissionStatuses },
+          assessment: { patient: patientFilter },
+        },
+      }),
+      prisma.followUp.count({
+        where: { lhwId: lhw.id, status: 'PENDING', dueDate: { lt: todayStart } },
+      }),
+      prisma.homeVisit.count({
+        where: { lhwId: lhw.id, visitDate: { gte: monthStart, lt: monthEnd } },
+      }),
+      prisma.referralStatusHistory.count({
+        where: {
+          toStatus: 'CLOSED',
+          createdAt: { gte: monthStart, lt: monthEnd },
+          referral: { patient: patientFilter },
+        },
+      }),
+    ])
+
+    return res.json({
+      lhwId: lhw.id,
+      assignedPatients,
+      openRedCareMissions,
+      overdueFollowUps,
+      homeVisitsThisMonth,
+      referralsClosedThisMonth,
+    })
+  } catch (error) {
+    return handleDatabaseError(error, res)
+  }
+}
+
 module.exports = {
   getPatientProfile,
   savePatientProfile,
   getLhwProfile,
   saveLhwProfile,
+  getLhwStats,
   computeAgeFromDob,
   computeAgeRiskNote,
   patientProfileSelect,

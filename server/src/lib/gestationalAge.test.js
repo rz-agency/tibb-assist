@@ -4,8 +4,10 @@ const {
   getGestationalWeeks,
   isPreterm,
   isPostterm,
+  getTrimester,
   calculateDueDate,
   toUTCDate,
+  decoratePregnancy,
 } = require('./gestationalAge')
 
 const MS_PER_DAY = 86_400_000
@@ -147,4 +149,74 @@ test('toUTCDate: normalises a Date to UTC midnight', () => {
   // The normalised date must have UTC hours/minutes/seconds = 0.
   assert.equal(normalised.getUTCHours(), 0)
   assert.equal(normalised.getUTCMinutes(), 0)
+})
+
+// ─── getTrimester ────────────────────────────────────────────────
+
+test('getTrimester: null → null', () => {
+  assert.equal(getTrimester(null), null)
+})
+
+test('getTrimester: undefined → null', () => {
+  assert.equal(getTrimester(undefined), null)
+})
+
+test('getTrimester: 0 weeks → 1 (first trimester)', () => {
+  assert.equal(getTrimester(0), 1)
+})
+
+test('getTrimester: 13 weeks → 1 (last week of first trimester)', () => {
+  assert.equal(getTrimester(13), 1)
+})
+
+test('getTrimester: 14 weeks → 2 (first week of second trimester)', () => {
+  assert.equal(getTrimester(14), 2)
+})
+
+test('getTrimester: 27 weeks → 2 (last week of second trimester)', () => {
+  assert.equal(getTrimester(27), 2)
+})
+
+test('getTrimester: 28 weeks → 3 (first week of third trimester)', () => {
+  assert.equal(getTrimester(28), 3)
+})
+
+test('getTrimester: 40 weeks → 3 (full term)', () => {
+  assert.equal(getTrimester(40), 3)
+})
+
+test('getTrimester: 43 weeks → 3 (postterm still trimester 3)', () => {
+  assert.equal(getTrimester(43), 3)
+})
+
+// ─── decoratePregnancy: trimester field ──────────────────────────
+
+test('decoratePregnancy: includes trimester field (first trimester)', () => {
+  // 8 weeks ago → trimester 1
+  const lmpDate = new Date(Date.now() - 8 * 7 * MS_PER_DAY)
+  const result = decoratePregnancy({ id: 1, lmpDate, dueDate: null })
+  assert.equal(result.gestationalWeeks, 8)
+  assert.equal(result.trimester, 1)
+})
+
+test('decoratePregnancy: includes trimester field (second trimester)', () => {
+  // 20 weeks ago → trimester 2
+  const lmpDate = new Date(Date.now() - 20 * 7 * MS_PER_DAY)
+  const result = decoratePregnancy({ id: 2, lmpDate, dueDate: null })
+  assert.equal(result.gestationalWeeks, 20)
+  assert.equal(result.trimester, 2)
+})
+
+test('decoratePregnancy: includes trimester field (third trimester)', () => {
+  // 32 weeks ago → trimester 3
+  const lmpDate = new Date(Date.now() - 32 * 7 * MS_PER_DAY)
+  const result = decoratePregnancy({ id: 3, lmpDate, dueDate: null })
+  assert.equal(result.gestationalWeeks, 32)
+  assert.equal(result.trimester, 3)
+})
+
+test('decoratePregnancy: trimester null when lmpDate is null', () => {
+  const result = decoratePregnancy({ id: 4, lmpDate: null, dueDate: null })
+  assert.equal(result.gestationalWeeks, null)
+  assert.equal(result.trimester, null)
 })

@@ -51,6 +51,7 @@ enum LhwRegion {
   BALOCHISTAN
   GILGIT_BALTISTAN
   ISLAMABAD
+  AJK
   OTHER
 }
 
@@ -103,6 +104,25 @@ enum CareMissionAction {
   EMERGENCY_CALL_INITIATED
 }
 
+enum HomeVisitType {
+  ROUTINE
+  FOLLOW_UP
+  POSTNATAL
+  EMERGENCY_FOLLOW_UP
+}
+
+enum FollowUpType {
+  HOME_VISIT
+  ANC_VISIT
+  REFERRAL_CHECK
+  CHECK_IN_REMINDER
+}
+
+enum FollowUpStatus {
+  PENDING
+  COMPLETED
+}
+
 model User {
   id         Int      @id @default(autoincrement())
   email      String   @unique @db.VarChar(255)
@@ -118,6 +138,11 @@ model User {
   careMissionTimelineEntries CareMissionTimeline[] @relation("CareMissionTimelineAuthor")
   completedChecklistItems    CareMissionChecklistItem[] @relation("CareMissionChecklistCompleter")
   referralStatusHistory      ReferralStatusHistory[] @relation("ReferralStatusHistoryAuthor")
+  loggedAncVisits            AncVisit[] @relation("AncVisitLogger")
+  createdHomeVisits          HomeVisit[] @relation("HomeVisitCreator")
+  administeredImmunizations  Immunization[] @relation("ImmunizationAdminister")
+  pushSubscriptions          PushSubscription[]
+  pushNotificationLogs       PushNotificationLog[]
 
   @@map("users")
 }
@@ -127,7 +152,6 @@ model PatientProfile {
   userId          Int      @unique @map("user_id")
   fullName        String   @map("full_name") @db.VarChar(255)
   phone           String?  @db.VarChar(30)
-  age             Int?
   dateOfBirth     DateTime? @map("date_of_birth") @db.Date
   address         String?  @db.VarChar(500)
   bloodGroup      String?  @map("blood_group") @db.VarChar(5)
@@ -149,6 +173,9 @@ model PatientProfile {
   referrals       Referral[]
   emergencyContacts EmergencyContact[]
   checkIns        WeeklyCheckIn[]
+  homeVisits      HomeVisit[]
+  immunizations   Immunization[]
+  followUps       FollowUp[]
 
   @@map("patient_profiles")
 }
@@ -166,6 +193,8 @@ model Pregnancy {
 
   patient          PatientProfile @relation(fields: [patientId], references: [id])
   assessments     Assessment[]
+  ancVisits       AncVisit[]
+  immunizations   Immunization[]
 
   @@map("pregnancies")
 }
@@ -235,6 +264,8 @@ model Lhw {
   user     User @relation(fields: [userId], references: [id])
   assignedPatients PatientProfile[] @relation("AssignedLhw")
   careMissions     CareMission[]
+  homeVisits       HomeVisit[]
+  followUps        FollowUp[]
 
   @@map("lhws")
 }
@@ -273,6 +304,7 @@ model Referral {
   facility      HealthcareFacility @relation(fields: [facilityId], references: [id])
   careMission   CareMission?
   statusHistory ReferralStatusHistory[]
+  followUps     FollowUp[]
 
   @@map("referrals")
 }
@@ -307,6 +339,7 @@ model CareMission {
   assignedLhw   Lhw?       @relation(fields: [assignedLhwId], references: [id])
   timelineEntries  CareMissionTimeline[]
   checklistItems   CareMissionChecklistItem[]
+  followUps        FollowUp[]
 
   @@map("care_missions")
 }
@@ -377,4 +410,126 @@ model WeeklyCheckIn {
 
   @@index([patientProfileId, gestationalWeekAtCheckIn])
   @@map("weekly_check_ins")
+}
+
+model AncVisit {
+  id                   Int       @id @default(autoincrement())
+  pregnancyId          Int       @map("pregnancy_id")
+  loggedByUserId       Int       @map("logged_by_user_id")
+  visitNumber          Int       @map("visit_number")
+  visitDate            DateTime  @map("visit_date") @db.Date
+  gestationalWeekAtVisit Int?    @map("gestational_week_at_visit")
+  bloodPressure        String?   @map("blood_pressure") @db.VarChar(20)
+  weightKg             Decimal?  @map("weight_kg") @db.Decimal(5, 2)
+  dangerSignsChecked   Boolean   @default(false) @map("danger_signs_checked")
+  notes                String?   @db.Text
+  nextVisitDate        DateTime? @map("next_visit_date") @db.Date
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  pregnancy            Pregnancy  @relation(fields: [pregnancyId], references: [id])
+  loggedByUser         User       @relation("AncVisitLogger", fields: [loggedByUserId], references: [id])
+
+  @@index([pregnancyId, visitNumber])
+  @@map("anc_visits")
+}
+
+model HomeVisit {
+  id                  Int            @id @default(autoincrement())
+  patientId           Int            @map("patient_id")
+  lhwId               Int            @map("lhw_id")
+  visitDate           DateTime       @map("visit_date") @db.Date
+  visitType           HomeVisitType  @map("visit_type")
+  topicsDiscussed     Json?          @map("topics_discussed")
+  bloodPressureChecked Boolean       @default(false) @map("blood_pressure_checked")
+  notes               String?        @db.Text
+  nextVisitDate       DateTime?      @map("next_visit_date") @db.Date
+  createdByUserId     Int            @map("created_by_user_id")
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+
+  patient             PatientProfile @relation(fields: [patientId], references: [id])
+  lhw                 Lhw            @relation(fields: [lhwId], references: [id])
+  createdByUser       User           @relation("HomeVisitCreator", fields: [createdByUserId], references: [id])
+
+  @@index([patientId, visitDate])
+  @@index([lhwId, visitDate])
+  @@map("home_visits")
+}
+
+model Immunization {
+  id                Int       @id @default(autoincrement())
+  patientId         Int       @map("patient_id")
+  pregnancyId       Int?      @map("pregnancy_id")
+  vaccineName       String    @map("vaccine_name") @db.VarChar(100)
+  doseNumber        Int       @map("dose_number")
+  dateAdministered  DateTime  @map("date_administered") @db.Date
+  administeredByUserId Int    @map("administered_by_user_id")
+  nextDoseDate      DateTime? @map("next_dose_date") @db.Date
+  notes             String?   @db.Text
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  patient           PatientProfile @relation(fields: [patientId], references: [id])
+  pregnancy         Pregnancy?     @relation(fields: [pregnancyId], references: [id])
+  administeredByUser User          @relation("ImmunizationAdminister", fields: [administeredByUserId], references: [id])
+
+  @@index([patientId, vaccineName])
+  @@index([pregnancyId])
+  @@map("immunizations")
+}
+
+model FollowUp {
+  id                   Int            @id @default(autoincrement())
+  patientId            Int            @map("patient_id")
+  lhwId                Int            @map("lhw_id")
+  dueDate              DateTime       @map("due_date") @db.Date
+  type                 FollowUpType
+  status               FollowUpStatus @default(PENDING)
+  relatedReferralId    Int?           @unique @map("related_referral_id")
+  relatedCareMissionId Int?           @unique @map("related_care_mission_id")
+  completedAt          DateTime?      @map("completed_at")
+  notes                String?        @db.Text
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
+
+  patient              PatientProfile @relation(fields: [patientId], references: [id])
+  lhw                  Lhw            @relation(fields: [lhwId], references: [id])
+  relatedReferral      Referral?      @relation(fields: [relatedReferralId], references: [id])
+  relatedCareMission   CareMission?   @relation(fields: [relatedCareMissionId], references: [id])
+
+  @@index([patientId, dueDate])
+  @@index([lhwId, status, dueDate])
+  @@map("follow_ups")
+}
+
+enum NotificationType {
+  CHECK_IN_DUE
+  RED_ASSESSMENT_ALERT
+}
+
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  endpoint  String   @unique @db.VarChar(500)
+  keys      Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+model PushNotificationLog {
+  id               Int              @id @default(autoincrement())
+  userId           Int              @map("user_id")
+  notificationType NotificationType @map("notification_type")
+  dedupeKey        String           @map("dedupe_key") @db.VarChar(120)
+  sentAt           DateTime         @default(now()) @map("sent_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, notificationType, dedupeKey])
+  @@map("push_notification_log")
 }

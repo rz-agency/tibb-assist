@@ -372,6 +372,31 @@
     "CANCELLED": "Cancelled"
   }
 ,
+  "followUp": {
+    "title": "Follow-ups",
+    "sortLabel": "Sort follow-ups",
+    "sortByDueDate": "Due date",
+    "sortByPatient": "Patient name",
+    "loading": "Loading follow-ups...",
+    "loadingStats": "Loading stats...",
+    "nonePending": "No pending follow-ups.",
+    "overdue": "Overdue",
+    "dueThisWeek": "Due this week",
+    "upcoming": "Upcoming",
+    "daysOverdue": "{{days}}d overdue",
+    "markComplete": "Mark complete",
+    "typeHomeVisit": "Home visit",
+    "typeAncVisit": "ANC visit",
+    "typeReferralCheck": "Referral check",
+    "typeCheckInReminder": "Check-in reminder",
+    "typeOther": "Follow-up",
+    "statAssigned": "Assigned women",
+    "statOpenRed": "Open RED missions",
+    "statOverdue": "Overdue follow-ups",
+    "statHomeVisits": "Home visits this month",
+    "statReferralsClosed": "Referrals closed this month"
+  }
+,
   "profile": {
     "eyebrow": "Your profile",
     "pageTitle": "Personal information",

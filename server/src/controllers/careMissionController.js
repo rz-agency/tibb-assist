@@ -78,6 +78,12 @@ const detailSelect = {
       riskLevel: true,
       inputMethod: true,
       triageNotes: true,
+      assessedByUser: {
+        select: {
+          id: true,
+          role: true,
+        },
+      },
       patient: {
         select: {
           id: true,
@@ -190,14 +196,13 @@ async function getCareMission(req, res) {
 
   try {
     const accessFilter = await getCareMissionAccessFilter(req.user)
-    if (!accessFilter) {
-      return res.status(403).json({ error: 'You do not have permission to view care missions.' })
-    }
 
-    const mission = await prisma.careMission.findFirst({
-      where: { id: missionId, ...accessFilter },
-      select: detailSelect,
-    })
+    const mission = accessFilter
+      ? await prisma.careMission.findFirst({
+          where: { id: missionId, ...accessFilter },
+          select: detailSelect,
+        })
+      : null
 
     if (!mission) {
       return res.status(404).json({ error: 'Care mission not found.' })
@@ -237,15 +242,16 @@ async function updateChecklistItem(req, res) {
 
   try {
     const accessFilter = await getCareMissionAccessFilter(req.user)
-    if (!accessFilter) {
-      return res.status(403).json({ error: 'You do not have permission to modify care missions.' })
-    }
 
-    // Verify the mission exists and the user has access.
-    const mission = await prisma.careMission.findFirst({
-      where: { id: missionId, ...accessFilter },
-      select: { id: true },
-    })
+    // Verify the mission exists and the user has access in one combined
+    // query — a user who lacks access gets the same 404 as if it didn't
+    // exist, so we never leak whether a specific care mission is present.
+    const mission = accessFilter
+      ? await prisma.careMission.findFirst({
+          where: { id: missionId, ...accessFilter },
+          select: { id: true },
+        })
+      : null
 
     if (!mission) {
       return res.status(404).json({ error: 'Care mission not found.' })
@@ -332,27 +338,20 @@ async function logEmergencyAction(req, res) {
   }
 
   try {
-    const mission = await prisma.careMission.findUnique({
-      where: { id: missionId },
-      select: { id: true },
-    })
+    // Combine existence and access into a single query: a user who lacks
+    // access to a mission gets the same 404 as if the mission didn't exist,
+    // so we never leak whether a specific care mission is present.
+    const accessFilter = await getCareMissionAccessFilter(req.user)
+
+    const mission = accessFilter
+      ? await prisma.careMission.findFirst({
+          where: { id: missionId, ...accessFilter },
+          select: { id: true },
+        })
+      : null
 
     if (!mission) {
       return res.status(404).json({ error: 'Care mission not found.' })
-    }
-
-    const accessFilter = await getCareMissionAccessFilter(req.user)
-    if (!accessFilter) {
-      return res.status(403).json({ error: 'You do not have permission to modify care missions.' })
-    }
-
-    const accessibleMission = await prisma.careMission.findFirst({
-      where: { id: missionId, ...accessFilter },
-      select: { id: true },
-    })
-
-    if (!accessibleMission) {
-      return res.status(403).json({ error: 'You do not have permission to modify care missions.' })
     }
 
     const entry = await prisma.careMissionTimeline.create({

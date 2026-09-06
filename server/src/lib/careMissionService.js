@@ -10,14 +10,17 @@
  */
 
 const { getChecklistForRiskLevel } = require('./careMissionTemplates')
+const { createFollowUpForCareMission } = require('./followUpService')
 
 /**
  * Creates a Care Mission for a YELLOW or RED assessment within the given
- * Prisma interactive transaction.
+ * Prisma interactive transaction, together with the LHW follow-up task
+ * (RED due 3 days out, YELLOW due 7 days out — see followUpService.js).
  *
  * @param {object} tx - Prisma transaction client (Prisma.TransactionClient)
  * @param {object} params
  * @param {number} params.assessmentId - ID of the just-created assessment
+ * @param {number} params.patientId - ID of the assessed patient
  * @param {string} params.riskLevel   - 'GREEN', 'YELLOW', or 'RED' from the deterministic engine
  * @param {number|null} params.assignedLhwId - Patient's current LHW assignment (server-side only)
  * @param {number} params.createdByUserId - ID of the authenticated user
@@ -25,6 +28,7 @@ const { getChecklistForRiskLevel } = require('./careMissionTemplates')
  */
 async function createCareMissionForAssessment(tx, {
   assessmentId,
+  patientId,
   riskLevel,
   assignedLhwId,
   createdByUserId,
@@ -72,6 +76,14 @@ async function createCareMissionForAssessment(tx, {
         })),
       },
     },
+  })
+
+  // Schedule the LHW follow-up visit in the same transaction.
+  await createFollowUpForCareMission(tx, {
+    careMissionId: careMission.id,
+    patientId,
+    riskLevel,
+    assignedLhwId,
   })
 
   return careMission
