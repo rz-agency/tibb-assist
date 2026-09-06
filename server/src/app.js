@@ -73,3 +73,15 @@ app.get('/api/health/db', async (req, res) => {
 })
 
 module.exports = app
+app.get('/api/health/session', (req, res) => {
+  sessionStore.set('debug-test-id', { cookie: { maxAge: 1000 }, test: true }, (err) => {
+    if (err) {
+      return res.status(500).json({
+        status: 'error',
+        message: err.message,
+        code: err.code || null,
+      })
+    }
+    res.json({ status: 'ok', message: 'Session store write succeeded.' })
+  })
+})
