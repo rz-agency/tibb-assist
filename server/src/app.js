@@ -51,6 +51,26 @@ app.use(session({
   },
 }))
 
+/*
+ * SESSION RESPONSE DIAGNOSTIC
+ * Checks whether express-session has generated
+ * the Set-Cookie header before the response ends.
+ */
+app.use((req, res, next) => {
+  const originalEnd = res.end
+
+  res.end = function (...args) {
+    console.log('=== RESPONSE END ===')
+    console.log('URL:', req.originalUrl)
+    console.log('Set-Cookie at res.end:', res.getHeader('Set-Cookie'))
+    console.log('Session ID:', req.sessionID)
+
+    return originalEnd.apply(this, args)
+  }
+
+  next()
+})
+
 app.use('/api/auth', authRoutes)
 app.use('/api', assessmentRoutes)
 app.use('/api', profileRoutes)
