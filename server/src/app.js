@@ -1,6 +1,11 @@
 require('dotenv').config()
 
 const express = require('express')
+const app = express()
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store')
+  next()
+}) 
 const session = require('express-session')
 const mysql = require('mysql2/promise')
 const MySQLStore = require('express-mysql-session')(session)
@@ -16,8 +21,6 @@ const patientRoutes = require('./routes/patientRoutes')
 const aiAssistantRoutes = require('./routes/aiAssistantRoutes')
 const careMissionRoutes = require('./routes/careMissionRoutes')
 const checkInRoutes = require('./routes/checkInRoutes')
-
-const app = express()
 
 const sessionStore = new MySQLStore({}, mysql.createPool(process.env.DATABASE_URL))
 
@@ -85,3 +88,4 @@ app.get('/api/health/session', (req, res) => {
     res.json({ status: 'ok', message: 'Session store write succeeded.' })
   })
 })
+s
