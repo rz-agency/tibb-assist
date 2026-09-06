@@ -507,7 +507,7 @@ function LhwDashboard({ user, onNavigate, onViewPatientDetail }) {
     {profileSuccess && <StatusMessage tone="success">{profileSuccess}</StatusMessage>}
     {overdueFollowUps.length > 0 && (
       <div className="mt-4">
-        <StatusMessage>{t('followUp.overdueBanner', { count: overdueFollowUps.length, defaultValue: ` follow-up(s) are overdue � please review and complete them.` })}</StatusMessage>
+        <StatusMessage>{t('followUp.overdueBanner', { count: overdueFollowUps.length, defaultValue: ` follow-up(s) are overdue - please review and complete them.` })}</StatusMessage>
       </div>
     )}
     {/* ── Follow-up queue (auto-created tasks) ───────── */}
