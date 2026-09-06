@@ -122,3 +122,28 @@ app.get('/api/health/cookie', (req, res) => {
 })
 
 module.exports = app
+app.get('/api/health/session-cookie', (req, res) => {
+  req.session.test = 'hello123'
+
+  req.session.save((err) => {
+    if (err) {
+      console.error('SESSION SAVE ERROR:', err)
+
+      return res.status(500).json({
+        status: 'error',
+        message: err.message,
+      })
+    }
+
+    console.log('SESSION SAVED SUCCESSFULLY')
+    console.log('SESSION ID:', req.sessionID)
+    console.log('SET-COOKIE HEADER:', res.getHeader('Set-Cookie'))
+
+    res.json({
+      status: 'ok',
+      message: 'Session saved successfully.',
+      sessionID: req.sessionID,
+      setCookieHeader: res.getHeader('Set-Cookie') || null,
+    })
+  })
+})
