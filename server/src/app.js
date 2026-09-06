@@ -1,6 +1,7 @@
 require('dotenv').config()
 
 const express = require('express')
+const cors = require('cors')
 const session = require('express-session')
 const mysql = require('mysql2/promise')
 const MySQLStore = require('express-mysql-session')(session)
@@ -26,6 +27,11 @@ app.use((req, res, next) => {
   next()
 })
 
+app.use(cors({
+  origin: 'https://tibb-assist.vercel.app',
+  credentials: true,
+}))
+
 app.use(express.json({ limit: '5mb' }))
 app.use(session({
   name: 'tibbAssist.sid',
@@ -35,7 +41,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: 'none',
     secure: process.env.NODE_ENV === 'production',
     maxAge: 24 * 60 * 60 * 1000,
   },
