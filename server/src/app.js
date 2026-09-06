@@ -1,3 +1,4 @@
+
 require('dotenv').config()
 
 const express = require('express')
@@ -20,6 +21,8 @@ const checkInRoutes = require('./routes/checkInRoutes')
 
 const app = express()
 
+app.set('trust proxy', 1)
+
 const sessionStore = new MySQLStore(
   {},
   mysql.createPool(process.env.DATABASE_URL)
@@ -41,6 +44,7 @@ app.use(session({
   name: 'tibbAssist.sid',
   secret: process.env.SESSION_SECRET,
   store: sessionStore,
+  proxy: true,
   resave: false,
   saveUninitialized: false,
   cookie: {
