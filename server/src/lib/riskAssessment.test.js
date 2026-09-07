@@ -114,6 +114,44 @@ test('abdominal_pain PRESENT (no severity) → YELLOW, not emergency', () => {
   assert.equal(r.isEmergency, false)
 })
 
+// ─── Severe abdominal pain (severity-graded + labor-sign) ─────────
+
+test('severe_abdominal_pain ABSENT → GREEN', () => {
+  const r = calculateRiskAssessment([s('severe_abdominal_pain', 'ABSENT')])
+  assert.equal(r.riskLevel, 'GREEN')
+  assert.equal(r.isEmergency, false)
+})
+
+test('severe_abdominal_pain UNKNOWN → YELLOW', () => {
+  const r = calculateRiskAssessment([s('severe_abdominal_pain', 'UNKNOWN')])
+  assert.equal(r.riskLevel, 'YELLOW')
+  assert.equal(r.isEmergency, false)
+})
+
+test('severe_abdominal_pain PRESENT MILD → YELLOW, not emergency', () => {
+  const r = calculateRiskAssessment([s('severe_abdominal_pain', 'PRESENT', 'MILD')])
+  assert.equal(r.riskLevel, 'YELLOW')
+  assert.equal(r.isEmergency, false)
+})
+
+test('severe_abdominal_pain PRESENT MODERATE → RED, not emergency', () => {
+  const r = calculateRiskAssessment([s('severe_abdominal_pain', 'PRESENT', 'MODERATE')])
+  assert.equal(r.riskLevel, 'RED')
+  assert.equal(r.isEmergency, false)
+})
+
+test('severe_abdominal_pain PRESENT SEVERE → RED + emergency', () => {
+  const r = calculateRiskAssessment([s('severe_abdominal_pain', 'PRESENT', 'SEVERE')])
+  assert.equal(r.riskLevel, 'RED')
+  assert.equal(r.isEmergency, true)
+})
+
+test('severe_abdominal_pain PRESENT (no severity) → YELLOW, not emergency', () => {
+  const r = calculateRiskAssessment([s('severe_abdominal_pain', 'PRESENT')])
+  assert.equal(r.riskLevel, 'YELLOW')
+  assert.equal(r.isEmergency, false)
+})
+
 // ─── Fever ───────────────────────────────────────────────────────
 
 test('fever ABSENT → GREEN', () => {
@@ -447,6 +485,65 @@ test('preterm 36w + severe_abdominal_pain PRESENT → RED PRETERM_LABOR_RISK', (
   )
   assert.equal(r.riskLevel, 'RED')
   assert.equal(r.resultCode, 'PRETERM_LABOR_RISK')
+})
+
+test('preterm 36w + severe_abdominal_pain PRESENT MILD → RED PRETERM_LABOR_RISK (override beats YELLOW)', () => {
+  const r = calculateRiskAssessment(
+    [s('severe_abdominal_pain', 'PRESENT', 'MILD')],
+    36,
+  )
+  assert.equal(r.riskLevel, 'RED')
+  assert.equal(r.resultCode, 'PRETERM_LABOR_RISK')
+  assert.equal(r.isEmergency, true)
+})
+
+test('preterm 36w + severe_abdominal_pain PRESENT SEVERE → RED PRETERM_LABOR_RISK + emergency', () => {
+  const r = calculateRiskAssessment(
+    [s('severe_abdominal_pain', 'PRESENT', 'SEVERE')],
+    36,
+  )
+  assert.equal(r.riskLevel, 'RED')
+  assert.equal(r.resultCode, 'PRETERM_LABOR_RISK')
+  assert.equal(r.isEmergency, true)
+})
+
+test('non-preterm 38w + severe_abdominal_pain PRESENT MILD → YELLOW (no preterm override)', () => {
+  const r = calculateRiskAssessment(
+    [s('severe_abdominal_pain', 'PRESENT', 'MILD')],
+    38,
+  )
+  assert.equal(r.riskLevel, 'YELLOW')
+  assert.notEqual(r.resultCode, 'PRETERM_LABOR_RISK')
+  assert.equal(r.isEmergency, false)
+})
+
+test('non-preterm 38w + severe_abdominal_pain PRESENT MODERATE → RED (severity grading, no preterm override)', () => {
+  const r = calculateRiskAssessment(
+    [s('severe_abdominal_pain', 'PRESENT', 'MODERATE')],
+    38,
+  )
+  assert.equal(r.riskLevel, 'RED')
+  assert.equal(r.resultCode, 'WARNING_SIGN_PRESENT')
+  assert.equal(r.isEmergency, false)
+})
+
+test('preterm 36w + severe_abdominal_pain ABSENT → no preterm_labor_risk', () => {
+  const r = calculateRiskAssessment(
+    [s('severe_abdominal_pain', 'ABSENT')],
+    36,
+  )
+  assert.equal(r.riskLevel, 'GREEN')
+  assert.notEqual(r.resultCode, 'PRETERM_LABOR_RISK')
+})
+
+test('null gestationalWeeks + severe_abdominal_pain PRESENT SEVERE → RED + emergency (no preterm override)', () => {
+  const r = calculateRiskAssessment(
+    [s('severe_abdominal_pain', 'PRESENT', 'SEVERE')],
+    null,
+  )
+  assert.equal(r.riskLevel, 'RED')
+  assert.equal(r.resultCode, 'EMERGENCY_WARNING_SIGN')
+  assert.equal(r.isEmergency, true)
 })
 
 test('preterm 36w + contractions ABSENT → does NOT trigger preterm_labor_risk', () => {

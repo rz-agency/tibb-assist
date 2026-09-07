@@ -1,21 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { createAssessment, createReferral, getFacilities, getPatientProfile, getSymptoms } from '../api/api'
+import { createAssessment, createReferral, getLhwProfile, getPatientProfile, getPregnancies, getSymptoms } from '../api/api'
+import { RISK_LABEL_KEY, cleanSymptomLabel } from '../utils/riskLabels'
 import StatusMessage from '../components/StatusMessage'
 import EmergencyPanel from '../components/EmergencyPanel'
+import NearbyFacilityList from '../components/NearbyFacilityList'
 import { ShieldIcon, AlertIcon, HeartIcon } from '../components/Illustrations'
 
-const RISK_LABEL_KEY = { GREEN: 'assessment.riskGreen', YELLOW: 'assessment.riskYellow', RED: 'assessment.riskRed' }
 const RISK_ICONS = { GREEN: <ShieldIcon size={24} color="var(--text-inverse)" />, YELLOW: <AlertIcon size={24} color="var(--text-inverse)" />, RED: <AlertIcon size={24} color="var(--text-inverse)" /> }
 
 const RESULT_CODE_MESSAGES = {
   PRETERM_LABOR_RISK: { explanationKey: 'assessment.pretermLaborRiskExplanation', actionKey: 'assessment.pretermLaborRiskAction' },
   POSTTERM_PREGNANCY: { explanationKey: 'assessment.posttermPregnancyExplanation', actionKey: 'assessment.posttermPregnancyAction' },
-}
-
-function cleanSymptomLabel(name) {
-  const cleaned = name.replace(/^(Severe|Heavy)\s+/i, '').trim()
-  return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : cleaned
 }
 
 /** Horizontal step indicator */
@@ -39,22 +35,23 @@ function StepBar({ steps, current }) {
 
 function AssessmentPage({ user, onNavigate }) {
   const { t } = useTranslation()
+  const isLhw = user.role === 'LHW'
   const [symptoms, setSymptoms] = useState([])
   const [patientId, setPatientId] = useState(null)
+  const [assignedPatients, setAssignedPatients] = useState([])
+  const [selectedPatient, setSelectedPatient] = useState(null)
   const [answers, setAnswers] = useState({})
   const [pregnancies, setPregnancies] = useState([])
   const [selectedPregnancyId, setSelectedPregnancyId] = useState('')
   const [completedAssessment, setCompletedAssessment] = useState(null)
   const [ageRiskNote, setAgeRiskNote] = useState(null)
-  const [facilities, setFacilities] = useState([])
-  const [facilityLoading, setFacilityLoading] = useState(false)
-  const [facilityError, setFacilityError] = useState('')
-  const [selectedFacilityId, setSelectedFacilityId] = useState('')
+  const [selectedFacility, setSelectedFacility] = useState(null)
   const [referralNotes, setReferralNotes] = useState('')
   const [referralSubmitting, setReferralSubmitting] = useState(false)
   const [referralSuccess, setReferralSuccess] = useState('')
   const [referralError, setReferralError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [patientLoading, setPatientLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [severityErrors, setSeverityErrors] = useState(new Set())
@@ -63,13 +60,22 @@ function AssessmentPage({ user, onNavigate }) {
   useEffect(() => {
     const loadAssessmentForm = async () => {
       try {
-        const [symptomResult, profile] = await Promise.all([getSymptoms(), getPatientProfile(user.id)])
-        setSymptoms(symptomResult.symptoms)
-        setPatientId(profile.id)
-        setPregnancies(profile.pregnancies || [])
-        const activePregnancies = (profile.pregnancies || []).filter((pregnancy) => pregnancy.pregnancyStatus === 'ACTIVE')
-        if (activePregnancies.length === 1) setSelectedPregnancyId(activePregnancies[0].id)
-        setAnswers(Object.fromEntries(symptomResult.symptoms.map((symptom) => [symptom.id, { answerStatus: 'UNKNOWN', severity: '' }])))
+        if (user.role === 'LHW') {
+          // LHW flow: symptoms load now, but the patient profile is only
+          // loaded after she selects one of her assigned women below.
+          const [symptomResult, lhwProfile] = await Promise.all([getSymptoms(), getLhwProfile(user.id)])
+          setSymptoms(symptomResult.symptoms)
+          setAssignedPatients(lhwProfile.assignedPatients || [])
+          setAnswers(Object.fromEntries(symptomResult.symptoms.map((symptom) => [symptom.id, { answerStatus: 'UNKNOWN', severity: '' }])))
+        } else {
+          const [symptomResult, profile] = await Promise.all([getSymptoms(), getPatientProfile(user.id)])
+          setSymptoms(symptomResult.symptoms)
+          setPatientId(profile.id)
+          setPregnancies(profile.pregnancies || [])
+          const activePregnancies = (profile.pregnancies || []).filter((pregnancy) => pregnancy.pregnancyStatus === 'ACTIVE')
+          if (activePregnancies.length === 1) setSelectedPregnancyId(activePregnancies[0].id)
+          setAnswers(Object.fromEntries(symptomResult.symptoms.map((symptom) => [symptom.id, { answerStatus: 'UNKNOWN', severity: '' }])))
+        }
       } catch (requestError) {
         setError(requestError.message)
       } finally {
@@ -78,7 +84,32 @@ function AssessmentPage({ user, onNavigate }) {
     }
 
     loadAssessmentForm()
-  }, [user.id])
+  }, [user.id, user.role])
+
+  const selectPatient = async (patient) => {
+    setError('')
+    setPatientLoading(true)
+    try {
+      const patientPregnancies = await getPregnancies(patient.id)
+      setSelectedPatient(patient)
+      setPatientId(patient.id)
+      setPregnancies(patientPregnancies.pregnancies || [])
+      const activePregnancies = (patientPregnancies.pregnancies || []).filter((pregnancy) => pregnancy.pregnancyStatus === 'ACTIVE')
+      setSelectedPregnancyId(activePregnancies.length === 1 ? activePregnancies[0].id : '')
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setPatientLoading(false)
+    }
+  }
+
+  const changePatient = () => {
+    setSelectedPatient(null)
+    setPatientId(null)
+    setPregnancies([])
+    setSelectedPregnancyId('')
+    setCompletedAssessment(null)
+  }
 
   const updateAnswer = (symptomId, field, value) => {
     setAnswers({ ...answers, [symptomId]: { ...answers[symptomId], [field]: value } })
@@ -121,11 +152,6 @@ function AssessmentPage({ user, onNavigate }) {
       })
       setCompletedAssessment(result.assessment)
       setAgeRiskNote(result.ageRiskNote || null)
-      setFacilityLoading(true)
-      getFacilities().then((facilityResult) => {
-        setFacilities(facilityResult.facilities)
-        if (facilityResult.facilities.length > 0) setSelectedFacilityId(facilityResult.facilities[0].id)
-      }).catch((requestError) => setFacilityError(requestError.message)).finally(() => setFacilityLoading(false))
     } catch (requestError) {
       setError(requestError.message)
     } finally {
@@ -141,7 +167,7 @@ function AssessmentPage({ user, onNavigate }) {
     try {
       await createReferral({
         assessmentId: completedAssessment.id,
-        facilityId: Number(selectedFacilityId),
+        ...(selectedFacility ? { facility: selectedFacility } : {}),
         notes: referralNotes || null,
       })
       setReferralSuccess(t('assessment.referralSuccess'))
@@ -152,7 +178,7 @@ function AssessmentPage({ user, onNavigate }) {
     }
   }
 
-  if (user.role !== 'WOMAN') {
+  if (user.role !== 'WOMAN' && user.role !== 'LHW') {
     return (
       <section className="content-panel text-center">
         <div className="empty-state-icon mx-auto"><ShieldIcon size={28} /></div>
@@ -170,7 +196,6 @@ function AssessmentPage({ user, onNavigate }) {
     }
     const resultMessage = resultMessages[completedAssessment.riskLevel]
     const risk = completedAssessment.riskLevel.toLowerCase()
-    const facility = facilities[0]
     const isResultCodeMsg = completedAssessment.resultCode && RESULT_CODE_MESSAGES[completedAssessment.resultCode]
 
     return (
@@ -222,36 +247,23 @@ function AssessmentPage({ user, onNavigate }) {
           <h2 className="section-title">{t('assessment.healthcareReferral')}</h2>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">{t('assessment.diagnosisDisclaimer')}</p>
 
-          {facilityLoading && <p className="mt-3 text-sm text-[var(--text-muted)]">{t('assessment.loadingFacilities')}</p>}
-          {facilityError && <StatusMessage>{facilityError}</StatusMessage>}
-          {!facilityLoading && !facilityError && !facility && <p className="mt-3 text-sm text-[var(--text-muted)]">{t('assessment.noFacilities')}</p>}
-
-          {facility && (
-            <div className="compact-card mt-3">
-              <p className="font-semibold text-[var(--text-primary)]">{facility.name}</p>
-              <p className="text-sm text-[var(--text-secondary)]">{facility.facilityType.replace('_', ' ')}</p>
-              {(facility.address || facility.city) && <p className="text-sm text-[var(--text-muted)]">{[facility.address, facility.city].filter(Boolean).join(', ')}</p>}
-              {facility.phone && <p className="text-sm text-[var(--text-muted)]">{t('assessment.phoneLabel')} {facility.phone}</p>}
-            </div>
-          )}
-
-          {facilities.length > 0 && !referralSuccess && (
+          {referralSuccess ? (
+            <div className="mt-4"><StatusMessage tone="success">{referralSuccess}</StatusMessage></div>
+          ) : (
             <form className="mt-5 space-y-4" onSubmit={submitReferral}>
-              <label className="form-label">{t('assessment.selectFacility')}
-                <select className="form-input" value={selectedFacilityId} onChange={(event) => setSelectedFacilityId(event.target.value)}>
-                  {facilities.map((f) => <option key={f.id} value={f.id}>{f.name}{f.city ? ` - ${f.city}` : ''}</option>)}
-                </select>
-              </label>
+              <NearbyFacilityList
+                selectedFacility={selectedFacility}
+                onSelectFacility={setSelectedFacility}
+              />
               <label className="form-label">{t('assessment.notes')} <span className="font-normal text-[var(--text-muted)]">{t('common.optional')}</span>
                 <textarea className="form-input" rows="2" value={referralNotes} onChange={(event) => setReferralNotes(event.target.value)} />
               </label>
               {referralError && <StatusMessage>{referralError}</StatusMessage>}
-              <button className="button-primary" disabled={referralSubmitting}>
+              <button className="button-primary" disabled={referralSubmitting || !selectedFacility}>
                 {referralSubmitting ? t('assessment.creatingReferral') : t('assessment.createReferral')}
               </button>
             </form>
           )}
-          {referralSuccess && <div className="mt-4"><StatusMessage tone="success">{referralSuccess}</StatusMessage></div>}
         </section>
 
         {/* ── Recorded answers ────────────────────────────── */}
@@ -288,10 +300,43 @@ function AssessmentPage({ user, onNavigate }) {
       {loading && <p className="text-sm text-[var(--text-muted)]">{t('assessment.loadingSymptoms')}</p>}
       {error && <StatusMessage>{error}</StatusMessage>}
 
-      {pregnancies.filter((p) => p.pregnancyStatus === 'ACTIVE').length === 0 && (
-        <StatusMessage>{t('assessment.noActivePregnancy')} <button className="link-button" onClick={() => onNavigate('pregnancy')}>{t('assessment.openPregnancy')}</button></StatusMessage>
+      {/* LHW flow: a woman must be selected before the checklist appears */}
+      {isLhw && !selectedPatient && (
+        <section className="content-panel">
+          <p className="eyebrow">{t('assessment.selectPatientEyebrow', { defaultValue: 'LHW assessment' })}</p>
+          <h2 className="section-title">{t('assessment.selectPatientTitle', { defaultValue: 'Select a woman to assess' })}</h2>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">{t('assessment.selectPatientSubtitle', { defaultValue: 'Choose one of the women assigned to you before starting the symptom checklist.' })}</p>
+          {!loading && assignedPatients.length === 0 && (
+            <p className="mt-4 text-sm text-[var(--text-secondary)]">{t('lhw.noWomenAssigned')}</p>
+          )}
+          <div className="mt-4 space-y-3">
+            {assignedPatients.map((patient) => (
+              <button type="button" className="history-item" key={patient.id} onClick={() => selectPatient(patient)} disabled={patientLoading}>
+                <span>
+                  <strong className="text-[var(--text-primary)]">{patient.fullName}</strong>
+                  <small>{patient.district || patient.villageOrArea || t('lhw.locationNotRecorded')}</small>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
       )}
-      {pregnancies.filter((p) => p.pregnancyStatus === 'ACTIVE').length > 1 && (
+
+      {isLhw && selectedPatient && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-subtle)] px-4 py-3">
+          <p className="text-sm font-semibold text-[var(--text-primary)]">
+            {t('assessment.assessingFor', { defaultValue: 'Assessing' })}: {selectedPatient.fullName}
+          </p>
+          <button type="button" className="link-button" onClick={changePatient}>
+            {t('assessment.changePatient', { defaultValue: 'Choose a different woman' })}
+          </button>
+        </div>
+      )}
+
+      {(!isLhw || selectedPatient) && pregnancies.filter((p) => p.pregnancyStatus === 'ACTIVE').length === 0 && (
+        <StatusMessage>{t('assessment.noActivePregnancy')} {!isLhw && <button className="link-button" onClick={() => onNavigate('pregnancy')}>{t('assessment.openPregnancy')}</button>}</StatusMessage>
+      )}
+      {(!isLhw || selectedPatient) && pregnancies.filter((p) => p.pregnancyStatus === 'ACTIVE').length > 1 && (
         <label className="form-label">
           {t('assessment.activePregnancyLabel')}
           <select className="form-input" value={selectedPregnancyId} onChange={(event) => setSelectedPregnancyId(Number(event.target.value))}>
@@ -303,14 +348,14 @@ function AssessmentPage({ user, onNavigate }) {
         </label>
       )}
 
-      {!loading && !error && symptoms.length === 0 && (
+      {(!isLhw || selectedPatient) && !loading && !error && symptoms.length === 0 && (
         <div className="empty-state">
           <div className="empty-state-icon"><HeartIcon size={24} /></div>
           <p className="text-sm text-[var(--text-muted)]">{t('assessment.noActiveSymptoms')}</p>
         </div>
       )}
 
-      {!loading && !error && symptoms.length > 0 && (
+      {(!isLhw || selectedPatient) && !loading && !error && symptoms.length > 0 && (
         <form onSubmit={submit}>
           {validationError && (
             <div className="form-error-summary">

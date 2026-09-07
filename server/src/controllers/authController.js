@@ -1,4 +1,4 @@
-const bcrypt = require('bcryptjs')
+ const bcrypt = require('bcryptjs')
 const prisma = require('../lib/prisma')
 
 const safeUserSelect = {
@@ -40,7 +40,7 @@ function isStrongEnoughPassword(password) {
 
 async function register(req, res) {
   const email = normalizeEmail(req.body.email)
-  const { password, role, fullName } = req.body
+  const { password, role, fullName, district, province } = req.body
 
   if (!email || typeof password !== 'string' || !role) {
     return res.status(400).json({ error: 'email, password, and role are required.' })
@@ -58,8 +58,8 @@ async function register(req, res) {
     return res.status(400).json({ error: 'Only WOMAN and LHW accounts can be registered publicly.' })
   }
 
-  if (role === 'WOMAN' && (typeof fullName !== 'string' || !fullName.trim())) {
-    return res.status(400).json({ error: 'fullName is required for WOMAN registration.' })
+  if ((role === 'WOMAN' || role === 'LHW') && (typeof fullName !== 'string' || !fullName.trim())) {
+    return res.status(400).json({ error: 'fullName is required for WOMAN and LHW registration.' })
   }
 
   try {
@@ -80,6 +80,16 @@ async function register(req, res) {
           data: {
             userId: createdUser.id,
             fullName: fullName.trim(),
+            district: typeof district === 'string' && district.trim() ? district.trim() : null,
+            province: typeof province === 'string' && province.trim() ? province.trim() : null,
+          },
+        })
+      } else if (role === 'LHW') {
+        await transaction.lhw.create({
+          data: {
+            userId: createdUser.id,
+            fullName: fullName.trim(),
+            region: 'OTHER',
           },
         })
       }
@@ -121,8 +131,22 @@ async function login(req, res) {
     }
 
     const safeUser = getSafeUser(user)
-    req.session.user = safeUser
-    return res.json({ user: safeUser })
+    // Regenerate the session id before assigning the authenticated user
+    // to prevent session fixation attacks.
+    req.session.regenerate((regenerateError) => {
+      if (regenerateError) {
+        console.error(regenerateError)
+        return res.status(500).json({ error: 'Login failed.' })
+      }
+      req.session.user = safeUser
+      req.session.save((sessionError) => {
+        if (sessionError) {
+          console.error('SESSION SAVE ERROR:', sessionError)
+          return res.status(500).json({ error: 'Failed to persist session.', details: sessionError.message })
+        }
+        return res.json({ user: safeUser })
+      })
+    })
   } catch (error) {
     console.error(error)
     return res.status(500).json({ error: 'Login failed.' })

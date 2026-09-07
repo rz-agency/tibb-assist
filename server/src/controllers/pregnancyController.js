@@ -71,11 +71,40 @@ async function getWomanPatient(userId) {
 
 async function listPregnancies(req, res) {
   try {
-    const patient = await getWomanPatient(req.user.id)
-    if (!patient) return res.status(404).json({ error: 'Patient profile not found.' })
+    let where
+
+    if (req.user.role === 'LHW') {
+      const lhw = await prisma.lhw.findUnique({
+        where: { userId: req.user.id },
+        select: { id: true },
+      })
+      if (!lhw) return res.status(404).json({ error: 'LHW profile not found.' })
+
+      const patientId = parseId(req.query.patientId)
+      if (patientId) {
+        // Verify this patient is assigned to the LHW.
+        const assigned = await prisma.patientProfile.findFirst({
+          where: { id: patientId, assignedLhwId: lhw.id },
+          select: { id: true },
+        })
+        if (!assigned) return res.status(403).json({ error: 'Patient is not assigned to you.' })
+        where = { patientId }
+      } else {
+        // Return pregnancies for all assigned patients.
+        const assignedIds = await prisma.patientProfile.findMany({
+          where: { assignedLhwId: lhw.id },
+          select: { id: true },
+        })
+        where = { patientId: { in: assignedIds.map((p) => p.id) } }
+      }
+    } else {
+      const patient = await getWomanPatient(req.user.id)
+      if (!patient) return res.status(404).json({ error: 'Patient profile not found.' })
+      where = { patientId: patient.id }
+    }
 
     const pregnancies = await prisma.pregnancy.findMany({
-      where: { patientId: patient.id },
+      where,
       select: pregnancySelect,
       orderBy: { createdAt: 'desc' },
     })

@@ -9,7 +9,6 @@ const assert = require('node:assert/strict')
 
 const mockPrisma = {
   careMission: {
-    findUnique: async () => { throw new Error('Mock not configured') },
     findFirst: async () => { throw new Error('Mock not configured') },
   },
   careMissionTimeline: {
@@ -60,8 +59,7 @@ const womanOwner = { id: 11, role: 'WOMAN' }
 const otherWoman = { id: 22, role: 'WOMAN' }
 
 function grantAccess() {
-  // Mission exists and the access-filtered lookup also finds it.
-  mockPrisma.careMission.findUnique = async () => ({ id: 5 })
+  // Access-filtered lookup finds the mission for this user.
   mockPrisma.careMission.findFirst = async () => ({ id: 5 })
 }
 
@@ -105,27 +103,27 @@ test('emergency log: unknown actionType returns 400', async () => {
 // ---------- Existence and access ----------
 
 test('emergency log: unknown missionId returns 404', async () => {
-  mockPrisma.careMission.findUnique = async () => null
-  mockPrisma.careMission.findFirst = async () => { throw new Error('should not be called') }
+  // Access-filtered lookup finds nothing.
+  mockPrisma.careMission.findFirst = async () => null
+  mockPrisma.careMissionTimeline.create = async () => { throw new Error('should not be called') }
   const res = mockRes()
   await logEmergencyAction(mockRequest({ user: womanOwner, missionId: 999, actionType: 'CALLED_RESCUE_1122' }), res)
   assert.equal(res.statusCode, 404)
   assert.equal(res.body.error, 'Care mission not found.')
 })
 
-test('emergency log: WOMAN who does not own the mission is rejected with 403', async () => {
-  mockPrisma.careMission.findUnique = async () => ({ id: 5 })
-  // Access-filtered lookup finds nothing for this user.
+test('emergency log: WOMAN who does not own the mission gets 404 (not 403)', async () => {
+  // Access-filtered lookup finds nothing for this user — same response as
+  // if the mission didn't exist, so we never leak its presence.
   mockPrisma.careMission.findFirst = async () => null
   mockPrisma.careMissionTimeline.create = async () => { throw new Error('should not be called') }
 
   const res = mockRes()
   await logEmergencyAction(mockRequest({ user: otherWoman, missionId: 5, actionType: 'CALLED_RESCUE_1122' }), res)
-  assert.equal(res.statusCode, 403)
+  assert.equal(res.statusCode, 404)
 })
 
-test('emergency log: LHW not assigned to the patient is rejected with 403', async () => {
-  mockPrisma.careMission.findUnique = async () => ({ id: 5 })
+test('emergency log: LHW not assigned to the patient gets 404 (not 403)', async () => {
   mockPrisma.lhw.findUnique = async (args) => {
     assert.deepEqual(args.where, { userId: 30 })
     return { id: 7 }
@@ -135,17 +133,18 @@ test('emergency log: LHW not assigned to the patient is rejected with 403', asyn
 
   const res = mockRes()
   await logEmergencyAction(mockRequest({ user: { id: 30, role: 'LHW' }, missionId: 5, actionType: 'CALLED_RESCUE_1122' }), res)
-  assert.equal(res.statusCode, 403)
+  assert.equal(res.statusCode, 404)
 })
 
-test('emergency log: role without an access policy is rejected with 403', async () => {
-  mockPrisma.careMission.findUnique = async () => ({ id: 5 })
+test('emergency log: role without an access policy gets 404 (not 403)', async () => {
+  // getCareMissionAccessFilter returns null for ADMIN → no query runs,
+  // mission is treated as not found.
   mockPrisma.careMission.findFirst = async () => { throw new Error('should not be called') }
   mockPrisma.careMissionTimeline.create = async () => { throw new Error('should not be called') }
 
   const res = mockRes()
   await logEmergencyAction(mockRequest({ user: { id: 1, role: 'ADMIN' }, missionId: 5, actionType: 'CALLED_RESCUE_1122' }), res)
-  assert.equal(res.statusCode, 403)
+  assert.equal(res.statusCode, 404)
 })
 
 // ---------- Successful logging ----------
@@ -196,7 +195,6 @@ test('emergency log: CALLED_LHW records LHW call initiation', async () => {
 })
 
 test('emergency log: assigned LHW can log an emergency action for her patient mission', async () => {
-  mockPrisma.careMission.findUnique = async () => ({ id: 5 })
   mockPrisma.lhw.findUnique = async () => ({ id: 7 })
   mockPrisma.careMission.findFirst = async (args) => {
     // The access filter must scope the mission to this LHW's assigned patients.

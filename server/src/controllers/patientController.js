@@ -21,7 +21,7 @@ const assignedPatientSelect = {
   userId: true,
   fullName: true,
   phone: true,
-  age: true,
+  dateOfBirth: true,
   villageOrArea: true,
   district: true,
   province: true,

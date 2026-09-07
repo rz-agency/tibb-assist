@@ -150,6 +150,7 @@ async function createAssessmentFromExtractedSymptoms({ patient, userId, extracte
 
     await createCareMissionForAssessment(tx, {
       assessmentId: created.id,
+      patientId: patient.id,
       riskLevel: riskResult.riskLevel,
       assignedLhwId: patient.assignedLhwId ?? null,
       createdByUserId: userId,
@@ -207,6 +208,7 @@ async function createAssessmentFromExtractedSymptoms({ patient, userId, extracte
       address: true,
       city: true,
       phone: true,
+      isVerified: true,
     },
     orderBy: { name: 'asc' },
   })

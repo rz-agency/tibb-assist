@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getNearbyFacilities } from '../api/api'
 import StatusMessage from '../components/StatusMessage'
+import { useNearbyFacilitySearch, parseManualCoords } from '../hooks/useNearbyFacilitySearch'
 
 // Category groupings — order matches how sections render.
 const GROUPS = [
@@ -13,86 +13,33 @@ const GROUPS = [
 function NearbyFacilitiesPage() {
   const { t } = useTranslation()
 
-  // Geolocation phase: 'locating' | 'denied' | 'ready'
-  const [geoPhase, setGeoPhase] = useState('locating')
-  const [coords, setCoords] = useState(null)
+  // Shared nearby search (geolocation + OpenStreetMap facilities) — the same
+  // mechanism the referral facility selector uses.
+  const {
+    geoPhase,
+    facilities,
+    fetchLoading,
+    fetchError,
+    retryLocation,
+    submitManualLocation,
+  } = useNearbyFacilitySearch()
 
   // Manual location input (lat,lng)
   const [manualValue, setManualValue] = useState('')
   const [manualError, setManualError] = useState('')
-
-  // Fetch state
-  const [facilities, setFacilities] = useState([])
-  const [fetchLoading, setFetchLoading] = useState(false)
-  const [fetchError, setFetchError] = useState('')
-
-  // ── Geolocation on mount ────────────────────────────────────────────────────
-  // The callback-based geolocation API is an external system; the setState
-  // calls inside its callback are async and legitimate.
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setGeoPhase('denied')
-      return
-    }
-
-    let cancelled = false
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        if (cancelled) return
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-        setGeoPhase('ready')
-      },
-      () => {
-        if (!cancelled) setGeoPhase('denied')
-      },
-      { timeout: 10000, enableHighAccuracy: false },
-    )
-
-    return () => { cancelled = true }
-  }, [])
-
-  // ── Fetch when coords change ───────────────────────────────────────────────
-  useEffect(() => {
-    if (geoPhase !== 'ready' || !coords) return
-
-    let cancelled = false
-    setFetchLoading(true)
-    setFetchError('')
-    setFacilities([])
-
-    getNearbyFacilities(coords.lat, coords.lng).then(
-      (result) => { if (!cancelled) setFacilities(result) },
-      (err) => { if (!cancelled) setFetchError(err.message) },
-    ).finally(() => {
-      if (!cancelled) setFetchLoading(false)
-    })
-
-    return () => { cancelled = true }
-  }, [coords, geoPhase])
 
   // ── Manual input handler ────────────────────────────────────────────────────
   const handleManualSubmit = (e) => {
     e.preventDefault()
     setManualError('')
 
-    const trimmed = manualValue.trim()
-    const parts = trimmed.split(',').map((s) => s.trim())
-
-    if (parts.length !== 2 || parts.some((p) => Number.isNaN(Number(p)))) {
+    const parsed = parseManualCoords(manualValue)
+    if (!parsed) {
       setManualError(t('nearby.invalidCoords'))
       return
     }
 
-    const lat = Number(parts[0])
-    const lng = Number(parts[1])
-
-    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      setManualError(t('nearby.invalidCoords'))
-      return
-    }
-
-    setCoords({ lat, lng })
-    setGeoPhase('ready')
+    submitManualLocation(parsed.lat, parsed.lng)
   }
 
   // ── Grouped results ─────────────────────────────────────────────────────────
@@ -122,21 +69,7 @@ function NearbyFacilitiesPage() {
           <StatusMessage>{t('nearby.locationDenied')}</StatusMessage>
           <button
             className="button-secondary"
-            onClick={() => {
-              setGeoPhase('locating')
-              if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                  (pos) => {
-                    setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-                    setGeoPhase('ready')
-                  },
-                  () => setGeoPhase('denied'),
-                  { timeout: 10000, enableHighAccuracy: false },
-                )
-              } else {
-                setGeoPhase('denied')
-              }
-            }}
+            onClick={retryLocation}
           >
             {t('nearby.tryAgain')}
           </button>

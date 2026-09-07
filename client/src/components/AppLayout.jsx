@@ -5,7 +5,11 @@ import { BrandMark } from './Illustrations'
 function AppLayout({ user, currentPage, onNavigate, onLogout, children }) {
   const { t } = useTranslation()
 
-  const navItems = user.role === 'LHW'
+  const navItems = user.role === 'ADMIN'
+    ? [
+        ['admin', t('layout.navSupervisor', { defaultValue: 'Supervisor Dashboard' })],
+      ]
+    : user.role === 'LHW'
     ? [
         ['dashboard', t('layout.navAssignedWomen')],
         ['care-missions', t('layout.navCareMissions')],

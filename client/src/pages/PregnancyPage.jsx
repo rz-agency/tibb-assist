@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { createPregnancy, getPregnancies, updatePregnancy } from '../api/api'
+import { createAncVisit, createPregnancy, getAncVisits, getPregnancies, updatePregnancy } from '../api/api'
 import StatusMessage from '../components/StatusMessage'
 import { BabyIcon } from '../components/Illustrations'
 
@@ -47,6 +47,13 @@ function PregnancyPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const formSectionRef = useRef(null)
+  // ANC visit state: keyed by pregnancyId
+  const [ancVisits, setAncVisits] = useState({})
+  const [ancSchedules, setAncSchedules] = useState({})
+  const [ancLoading, setAncLoading] = useState({})
+  const [ancSaving, setAncSaving] = useState(null)
+  const [ancForm, setAncForm] = useState({ pregnancyId: null, visitNumber: '', visitDate: '', bloodPressure: '', weightKg: '', dangerSignsChecked: false, notes: '', nextVisitDate: '' })
+  const [ancFormOpen, setAncFormOpen] = useState(null)
 
   const loadPregnancies = async () => {
     try {
@@ -73,6 +80,55 @@ function PregnancyPage() {
 
     loadInitialPregnancies()
   }, [])
+
+  const updateAncField = (event) => setAncForm({ ...ancForm, [event.target.name]: event.target.type === 'checkbox' ? event.target.checked : event.target.value })
+
+  const openAncForm = (pregnancyId, nextVisitNumber) => {
+    setAncFormOpen(pregnancyId)
+    setAncForm({ pregnancyId, visitNumber: nextVisitNumber, visitDate: '', bloodPressure: '', weightKg: '', dangerSignsChecked: false, notes: '', nextVisitDate: '' })
+  }
+
+  const loadAncVisits = async (pregnancyId) => {
+    setAncLoading((prev) => ({ ...prev, [pregnancyId]: true }))
+    try {
+      const data = await getAncVisits(pregnancyId)
+      setAncVisits((prev) => ({ ...prev, [pregnancyId]: data.visits }))
+      setAncSchedules((prev) => ({ ...prev, [pregnancyId]: data.schedule }))
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setAncLoading((prev) => ({ ...prev, [pregnancyId]: false }))
+    }
+  }
+
+  const submitAncVisit = async (event) => {
+    event.preventDefault()
+    setAncSaving(ancForm.pregnancyId)
+    setError('')
+    try {
+      await createAncVisit({
+        ...ancForm,
+        visitNumber: Number(ancForm.visitNumber),
+        weightKg: ancForm.weightKg === '' ? null : Number(ancForm.weightKg),
+        nextVisitDate: ancForm.nextVisitDate || null,
+      })
+      setAncFormOpen(null)
+      await loadAncVisits(ancForm.pregnancyId)
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setAncSaving(null)
+    }
+  }
+
+  useEffect(() => {
+    // Load ANC visits for all pregnancies once they're loaded.
+    pregnancies.forEach((p) => {
+      if (p.pregnancyStatus === 'ACTIVE' && !ancVisits[p.id]) {
+        loadAncVisits(p.id)
+      }
+    })
+  }, [pregnancies])
 
   const updateField = (event) => setForm({ ...form, [event.target.name]: event.target.value })
 
@@ -193,6 +249,93 @@ function PregnancyPage() {
                     <span>{pregnancy.gestationalWeeks ?? pregnancy.gestationalWeek ?? t('common.notRecorded')}</span>
                   </div>
                 </div>
+
+                {/* ── ANC Visits section ─────────────────── */}
+                {pregnancy.pregnancyStatus === 'ACTIVE' && (
+                  <div className="mt-6 border-t border-[var(--border-soft)] pt-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <p className="eyebrow mb-0">{t('ancVisit.title', { defaultValue: 'ANC Visits' })}</p>
+                      {ancSchedules[pregnancy.id] && (
+                        <span className={`text-xs font-semibold ${ancSchedules[pregnancy.id].filter((s) => s.status === 'behind').length > 0 ? 'text-[var(--danger-600)]' : 'text-[var(--teal-700)]'}`}>
+                          {ancSchedules[pregnancy.id].filter((s) => s.status === 'completed').length}/{ancSchedules[pregnancy.id].length} {t('ancVisit.visitsCompleted', { defaultValue: 'visits completed' })}
+                        </span>
+                      )}
+                    </div>
+                    {ancLoading[pregnancy.id] && <p className="mt-2 text-sm text-[var(--text-muted)]">{t('ancVisit.loading', { defaultValue: 'Loading visits...' })}</p>}
+                    {ancSchedules[pregnancy.id] && (
+                      <div className="mt-3 space-y-2">
+                        {ancSchedules[pregnancy.id].map((slot) => (
+                          <div className="flex items-center justify-between rounded-lg border border-[var(--border-soft)] bg-[var(--bg-subtle)] px-3 py-2 text-sm" key={slot.visitNumber}>
+                            <div>
+                              <span className="font-medium text-[var(--text-primary)]">{t('ancVisit.visit', { n: slot.visitNumber, defaultValue: `Visit ${slot.visitNumber}` })}</span>
+                              <span className="ms-2 text-[var(--text-muted)]">{t('ancVisit.weekTarget', { week: slot.targetWeek, defaultValue: `Week ${slot.targetWeek}` })} · {slot.targetDate}</span>
+                            </div>
+                            <span className={`status-badge ${slot.status === 'completed' ? 'status-completed' : slot.status === 'behind' ? 'status-contacted' : 'status-recommended'}`}>
+                              {slot.status === 'completed' ? t('ancVisit.completed', { defaultValue: 'Done' }) : slot.status === 'behind' ? t('ancVisit.behind', { defaultValue: 'Behind' }) : t('ancVisit.upcoming', { defaultValue: 'Upcoming' })}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {ancVisits[pregnancy.id]?.length > 0 && (
+                      <details className="mt-3">
+                        <summary className="cursor-pointer text-xs font-medium text-[var(--teal-700)]">{t('ancVisit.viewHistory', { defaultValue: 'View visit history' })}</summary>
+                        <div className="mt-2 space-y-2">
+                          {ancVisits[pregnancy.id].map((v) => (
+                            <div className="rounded-lg border border-[var(--border-soft)] bg-[var(--bg-subtle)] px-3 py-2 text-xs" key={v.id}>
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium">{t('ancVisit.visit', { n: v.visitNumber, defaultValue: `Visit ${v.visitNumber}` })} — {dateInputValue(v.visitDate)}</span>
+                                <span className="text-[var(--text-muted)]">{v.gestationalWeekAtVisit != null ? `${t('pregnancy.gestationalWeek')}: ${v.gestationalWeekAtVisit}` : ''}</span>
+                              </div>
+                              {v.bloodPressure && <p className="mt-1 text-[var(--text-secondary)]">BP: {v.bloodPressure}</p>}
+                              {v.weightKg != null && <p className="text-[var(--text-secondary)]">{t('ancVisit.weight', { kg: v.weightKg, defaultValue: `Weight: ${v.weightKg} kg` })}</p>}
+                              {v.dangerSignsChecked && <p className="text-[var(--danger-600)]">{t('ancVisit.dangerSignsChecked', { defaultValue: 'Danger signs checked' })}</p>}
+                              {v.notes && <p className="mt-1 text-[var(--text-secondary)]">{v.notes}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+                    {ancFormOpen !== pregnancy.id && (
+                      <button className="button-secondary mt-3" onClick={() => openAncForm(pregnancy.id, (ancVisits[pregnancy.id]?.length || 0) + 1)}>
+                        {t('ancVisit.logVisit', { defaultValue: 'Log a visit' })}
+                      </button>
+                    )}
+                    {ancFormOpen === pregnancy.id && (
+                      <form className="mt-4 space-y-4 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-subtle)] p-4" onSubmit={submitAncVisit}>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <label className="form-label">{t('ancVisit.visitNumber', { defaultValue: 'Visit #' })}
+                            <input className="form-input" name="visitNumber" type="number" min="1" value={ancForm.visitNumber} onChange={updateAncField} required />
+                          </label>
+                          <label className="form-label">{t('ancVisit.visitDate', { defaultValue: 'Visit date' })}
+                            <input className="form-input" name="visitDate" type="date" value={ancForm.visitDate} onChange={updateAncField} required />
+                          </label>
+                          <label className="form-label">{t('ancVisit.bloodPressure', { defaultValue: 'Blood pressure' })}
+                            <input className="form-input" name="bloodPressure" value={ancForm.bloodPressure} onChange={updateAncField} placeholder="120/80" />
+                          </label>
+                          <label className="form-label">{t('ancVisit.weightKg', { defaultValue: 'Weight (kg)' })}
+                            <input className="form-input" name="weightKg" type="number" step="0.1" value={ancForm.weightKg} onChange={updateAncField} />
+                          </label>
+                          <label className="form-label">{t('ancVisit.nextVisitDate', { defaultValue: 'Next visit date' })}
+                            <input className="form-input" name="nextVisitDate" type="date" value={ancForm.nextVisitDate} onChange={updateAncField} />
+                          </label>
+                          <label className="form-label flex items-center gap-2">
+                            <input type="checkbox" name="dangerSignsChecked" checked={ancForm.dangerSignsChecked} onChange={updateAncField} />
+                            {t('ancVisit.dangerSignsChecked', { defaultValue: 'Danger signs checked' })}
+                          </label>
+                        </div>
+                        <label className="form-label">{t('assessment.notes')}
+                          <textarea className="form-input" name="notes" rows="2" value={ancForm.notes} onChange={updateAncField} />
+                        </label>
+                        <div className="flex flex-wrap gap-3">
+                          <button className="button-primary" disabled={ancSaving === pregnancy.id}>{ancSaving === pregnancy.id ? t('common.saving') : t('ancVisit.saveVisit', { defaultValue: 'Save visit' })}</button>
+                          <button className="button-secondary" type="button" onClick={() => setAncFormOpen(null)}>{t('common.cancel')}</button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                )}
+
                 {pregnancy.notes && <p className="mt-5 text-sm text-[var(--text-secondary)]">{t('pregnancy.notesPrefix')} {pregnancy.notes}</p>}
               </article>
             )
