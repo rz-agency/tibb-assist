@@ -1,6 +1,6 @@
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
 
-const LLM_MODEL = 'minimax/minimax-m3:free'
+const LLM_MODEL = 'nvidia/nemotron-3.5-lightning:free'
 const STT_MODEL = 'openai/whisper-large-v3'
 
 /**
