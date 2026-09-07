@@ -1,30 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getCareMissions, getCheckInDue, getHomeVisits, getImmunizations, getPatientProfile, getReferrals, updatePatientProfile } from '../api/api'
+import { getCareMissions, getCheckInDue, getPatientProfileSummary, getReferrals, updatePatientProfile } from '../api/api'
 import EmergencyContacts from '../components/EmergencyContacts'
 import StatusMessage from '../components/StatusMessage'
 import { HeartIcon, ShieldIcon, HistoryIcon, LocationIcon, PregnancyHeroIllustration } from '../components/Illustrations'
 
 const RISK_LABEL_KEY = { GREEN: 'assessment.riskGreen', YELLOW: 'assessment.riskYellow', RED: 'assessment.riskRed' }
-
-function computeAgeFromDate(dateStr) {
-  if (!dateStr) return null
-  const dob = new Date(dateStr)
-  if (isNaN(dob.getTime())) return null
-  const today = new Date()
-  let age = today.getFullYear() - dob.getFullYear()
-  const m = today.getMonth() - dob.getMonth()
-  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--
-  return age >= 0 ? age : null
-}
-
-/** Format a Date or ISO string as YYYY-MM-DD for <input type="date">. */
-function toDateInputValue(value) {
-  if (!value) return ''
-  const d = new Date(value)
-  if (isNaN(d.getTime())) return ''
-  return d.toISOString().slice(0, 10)
-}
 
 const pregnancyStatusKey = {
   ACTIVE: 'dashboard.activePregnancy',
@@ -32,7 +13,7 @@ const pregnancyStatusKey = {
   LOST: 'dashboard.lostPregnancy',
 }
 
-function GaProgressRing({ week, remaining, trimester, t }) {
+function GaProgressRing({ week, remaining, t }) {
   const TOTAL_WEEKS = 40
   const clamped = Math.max(0, Math.min(week, TOTAL_WEEKS))
   const radius = 92
@@ -40,6 +21,7 @@ function GaProgressRing({ week, remaining, trimester, t }) {
   const progress = clamped / TOTAL_WEEKS
   const dashOffset = circumference * (1 - progress)
   const gradientId = 'gaRingGradient'
+  const trimesterLabel = clamped < 14 ? 1 : clamped < 28 ? 2 : 3
 
   return (
     <div className="ga-ring" role="img" aria-label={t('dashboard.gaRingLabel', { week: clamped, defaultValue: `Week ${clamped} of ${TOTAL_WEEKS}` })}>
@@ -70,9 +52,7 @@ function GaProgressRing({ week, remaining, trimester, t }) {
             : t('dashboard.gaRingDue', { defaultValue: 'Baby is near' })}
         </span>
         <span className="ga-ring-sub" style={{ color: 'var(--teal-700)' }}>
-          {trimester != null
-            ? t('dashboard.gaRingTrimester', { trimester, defaultValue: `Trimester ${trimester}` })
-            : null}
+          {t('dashboard.gaRingTrimester', { trimester: trimesterLabel, defaultValue: `Trimester ${trimesterLabel}` })}
         </span>
       </div>
     </div>
@@ -82,14 +62,12 @@ function GaProgressRing({ week, remaining, trimester, t }) {
 function Dashboard({ user, onNavigate }) {
   const { t } = useTranslation()
   const [pregnancy, setPregnancy] = useState(null)
-  const [pregnancies, setPregnancies] = useState([])
-  const [selectedPregnancyId, setSelectedPregnancyId] = useState('')
   const [profile, setProfile] = useState(null)
   const [patientId, setPatientId] = useState(null)
   const [pregnancyLoading, setPregnancyLoading] = useState(true)
   const [pregnancyError, setPregnancyError] = useState('')
   const [profileEditing, setProfileEditing] = useState(false)
-  const [profileForm, setProfileForm] = useState({ fullName: '', phone: '', dateOfBirth: '', villageOrArea: '', district: '', province: '' })
+  const [profileForm, setProfileForm] = useState({ fullName: '', phone: '', age: '', villageOrArea: '', district: '', province: '' })
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileSuccess, setProfileSuccess] = useState('')
   const [profileError, setProfileError] = useState('')
@@ -103,35 +81,21 @@ function Dashboard({ user, onNavigate }) {
   // push notification. Dismissal lasts only for the current visit.
   const [checkInDue, setCheckInDue] = useState(null)
   const [checkInBannerDismissed, setCheckInBannerDismissed] = useState(false)
-  const [homeVisits, setHomeVisits] = useState([])
-  const [homeVisitsLoading, setHomeVisitsLoading] = useState(true)
-  const [immunizations, setImmunizations] = useState([])
-  const [immunizationsLoading, setImmunizationsLoading] = useState(true)
-  const [nextImmunizationDue, setNextImmunizationDue] = useState(null)
 
   useEffect(() => {
-    getPatientProfile(user.id)
+    getPatientProfileSummary(user.id)
       .then((data) => {
         setProfile(data)
         setPatientId(data.id)
-        setNextImmunizationDue(data.nextImmunizationDue || null)
         setProfileForm({
           fullName: data.fullName || '',
           phone: data.phone || '',
-          dateOfBirth: toDateInputValue(data.dateOfBirth),
+          age: data.age ?? '',
           villageOrArea: data.villageOrArea || '',
           district: data.district || '',
           province: data.province || '',
         })
-        const allPregnancies = data.pregnancies || []
-        setPregnancies(allPregnancies)
-        const activePregnancies = allPregnancies.filter((item) => item.pregnancyStatus === 'ACTIVE')
-        if (activePregnancies.length > 0) {
-          setSelectedPregnancyId(activePregnancies[0].id)
-          setPregnancy(activePregnancies[0])
-        } else {
-          setPregnancy(allPregnancies[0] || null)
-        }
+        setPregnancy(data.pregnancies.find((item) => item.pregnancyStatus === 'ACTIVE') || data.pregnancies[0] || null)
       })
       .catch((requestError) => setPregnancyError(requestError.message))
       .finally(() => setPregnancyLoading(false))
@@ -148,19 +112,6 @@ function Dashboard({ user, onNavigate }) {
       .catch(() => setCheckInDue({ due: false }))
   }, [user.id])
 
-  // Load home visit history once we know the patientId
-  useEffect(() => {
-    if (!patientId) return
-    getHomeVisits(patientId)
-      .then((result) => setHomeVisits(result.visits || []))
-      .catch(() => setHomeVisits([]))
-      .finally(() => setHomeVisitsLoading(false))
-    getImmunizations(patientId)
-      .then((result) => setImmunizations(result.immunizations || []))
-      .catch(() => setImmunizations([]))
-      .finally(() => setImmunizationsLoading(false))
-  }, [patientId])
-
   const updateProfileField = (event) => {
     const { name, value } = event.target
     setProfileForm({ ...profileForm, [name]: value })
@@ -171,7 +122,7 @@ function Dashboard({ user, onNavigate }) {
       setProfileForm({
         fullName: profile.fullName || '',
         phone: profile.phone || '',
-        dateOfBirth: toDateInputValue(profile.dateOfBirth),
+        age: profile.age ?? '',
         villageOrArea: profile.villageOrArea || '',
         district: profile.district || '',
         province: profile.province || '',
@@ -193,7 +144,7 @@ function Dashboard({ user, onNavigate }) {
     setProfileSuccess('')
     setProfileError('')
     try {
-      const data = { ...profileForm, dateOfBirth: profileForm.dateOfBirth || null }
+      const data = { ...profileForm, age: profileForm.age === '' ? null : Number(profileForm.age) }
       const updated = await updatePatientProfile(user.id, data)
       setProfile(updated)
       setProfileSuccess(t('common.profileUpdated'))
@@ -207,16 +158,8 @@ function Dashboard({ user, onNavigate }) {
 
   const displayName = profile?.fullName || user.email.split('@')[0]
   const gaWeek = pregnancy?.gestationalWeeks ?? null
-  const trimester = pregnancy?.trimester ?? null
+  const trimester = gaWeek != null ? (gaWeek < 14 ? 1 : gaWeek < 28 ? 2 : 3) : null
   const remaining = gaWeek != null ? 40 - gaWeek : null
-
-  const activePregnancies = pregnancies.filter((p) => p.pregnancyStatus === 'ACTIVE')
-
-  const selectPregnancy = (event) => {
-    const id = Number(event.target.value)
-    setSelectedPregnancyId(id)
-    setPregnancy(pregnancies.find((p) => p.id === id) || null)
-  }
 
   return (
     <div className="space-y-8">
@@ -249,7 +192,7 @@ function Dashboard({ user, onNavigate }) {
         </div>
         <div className="hero-illustration" aria-hidden="true">
           {gaWeek != null ? (
-            <GaProgressRing week={gaWeek} remaining={remaining} trimester={trimester} t={t} />
+            <GaProgressRing week={gaWeek} remaining={remaining} t={t} />
           ) : (
             <PregnancyHeroIllustration />
           )}
@@ -291,18 +234,6 @@ function Dashboard({ user, onNavigate }) {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="eyebrow">{t('dashboard.pregnancyEyebrow')}</p>
-              {activePregnancies.length > 1 && (
-                <label className="form-label mt-1 mb-2">
-                  {t('dashboard.activePregnancyLabel', { defaultValue: 'Active pregnancy' })}
-                  <select className="form-input" value={selectedPregnancyId} onChange={selectPregnancy}>
-                    {activePregnancies.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {t('dashboard.pregnancyOption', { id: p.id, dueDate: p.dueDate ? p.dueDate.slice(0, 10) : '', defaultValue: `Pregnancy #${p.id}${p.dueDate ? ` · Due ${p.dueDate.slice(0, 10)}` : ''}` })}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
               <p className="font-semibold text-[var(--text-primary)]">{t(pregnancyStatusKey[pregnancy.pregnancyStatus] || 'dashboard.activePregnancy')}</p>
               {gaWeek != null && (
                 <div className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
@@ -365,18 +296,11 @@ function Dashboard({ user, onNavigate }) {
                 <p className="mt-1 text-lg font-semibold text-[var(--text-primary)]">{profile.fullName}</p>
                 <div className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
                   {profile.phone && <><span className="detail-label">{t('dashboard.phoneLabel')}</span><span>{profile.phone}</span></>}
-                  {(profile.computedAge ?? computeAgeFromDate(profile.dateOfBirth)) != null && <><span className="detail-label">{t('dashboard.ageLabel')}</span><span>{profile.computedAge ?? computeAgeFromDate(profile.dateOfBirth)}</span></>}
+                  {profile.age && <><span className="detail-label">{t('dashboard.ageLabel')}</span><span>{profile.age}</span></>}
                   {profile.villageOrArea && <><span className="detail-label">{t('dashboard.areaLabel')}</span><span>{profile.villageOrArea}</span></>}
                   {profile.district && <><span className="detail-label">{t('dashboard.districtLabel')}</span><span>{profile.district}</span></>}
                   {profile.province && <><span className="detail-label">{t('dashboard.provinceLabel')}</span><span>{profile.province}</span></>}
                 </div>
-                {profile.assignedLhw && (
-                  <div className="mt-3 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-subtle)] px-3 py-2">
-                    <span className="detail-label">{t('dashboard.assignedLhwLabel', { defaultValue: 'Your Lady Health Worker' })}</span>
-                    <p className="mt-1 font-semibold text-[var(--text-primary)]">{profile.assignedLhw.fullName}</p>
-                    {profile.assignedLhw.phone && <p className="text-[var(--text-secondary)]">{profile.assignedLhw.phone}</p>}
-                  </div>
-                )}
               </>
             )}
           </div>
@@ -388,7 +312,7 @@ function Dashboard({ user, onNavigate }) {
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="form-label">{t('dashboard.formFullName')}<input className="form-input" name="fullName" value={profileForm.fullName} onChange={updateProfileField} required /></label>
               <label className="form-label">{t('dashboard.formPhone')}<input className="form-input" name="phone" value={profileForm.phone} onChange={updateProfileField} /></label>
-              <label className="form-label">{t('dashboard.formDateOfBirth', { defaultValue: 'Date of birth' })}<input className="form-input" name="dateOfBirth" type="date" value={profileForm.dateOfBirth} onChange={updateProfileField} /></label>
+              <label className="form-label">{t('dashboard.formAge')}<input className="form-input" name="age" type="number" value={profileForm.age} onChange={updateProfileField} /></label>
               <label className="form-label">{t('dashboard.formVillageArea')}<input className="form-input" name="villageOrArea" value={profileForm.villageOrArea} onChange={updateProfileField} /></label>
               <label className="form-label">{t('dashboard.formDistrict')}<input className="form-input" name="district" value={profileForm.district} onChange={updateProfileField} /></label>
               <label className="form-label">{t('dashboard.formProvince')}<input className="form-input" name="province" value={profileForm.province} onChange={updateProfileField} /></label>
@@ -473,73 +397,9 @@ function Dashboard({ user, onNavigate }) {
         )}
       </section>
 
-      {/* ── Immunization next-dose banner ──────────────── */}
-      {nextImmunizationDue && (
-        <div className="checkin-banner">
-          <p className="checkin-banner-text">
-            {t('immunization.nextDoseBanner', {
-              dose: nextImmunizationDue.doseNumber,
-              date: nextImmunizationDue.suggestedDate,
-              defaultValue: `TT${nextImmunizationDue.doseNumber} is due — suggested date: ${nextImmunizationDue.suggestedDate}`,
-            })}
-          </p>
-        </div>
-      )}
-
-      {/* ── Home visit history (read-only) ────────────────── */}
-      <section>
-        <p className="eyebrow mb-0">{t('homeVisit.title', { defaultValue: 'Home Visits' })}</p>
-        {homeVisitsLoading && <p className="mt-3 text-sm text-[var(--text-muted)]">{t('homeVisit.loading', { defaultValue: 'Loading visits...' })}</p>}
-        {!homeVisitsLoading && homeVisits.length === 0 && (
-          <p className="mt-3 text-sm text-[var(--text-muted)]">{t('homeVisit.noVisits', { defaultValue: 'No home visits recorded yet.' })}</p>
-        )}
-        {!homeVisitsLoading && homeVisits.length > 0 && (
-          <div className="mt-3 space-y-3">
-            {homeVisits.map((v) => (
-              <div className="history-item" key={v.id}>
-                <span>
-                  <strong className="text-[var(--text-primary)]">{v.visitType.replace('_', ' ')} — {v.visitDate ? v.visitDate.slice(0, 10) : ''}</strong>
-                  {v.topicsDiscussed?.length > 0 && (
-                    <small className="block">{v.topicsDiscussed.join(', ')}</small>
-                  )}
-                  {v.notes && <small className="block text-[var(--text-secondary)]">{v.notes}</small>}
-                </span>
-                <span className="flex items-center gap-2">
-                  {v.bloodPressureChecked && <span className="text-xs text-[var(--teal-700)]">BP ✓</span>}
-                  {v.nextVisitDate && <span className="text-xs text-[var(--text-muted)]">{t('homeVisit.nextVisit', { date: v.nextVisitDate.slice(0, 10), defaultValue: `Next: ${v.nextVisitDate.slice(0, 10)}` })}</span>}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* ── Immunization history (read-only) ──────────────── */}
-      <section>
-        <p className="eyebrow mb-0">{t('immunization.title', { defaultValue: 'Immunizations (TT)' })}</p>
-        {immunizationsLoading && <p className="mt-3 text-sm text-[var(--text-muted)]">{t('immunization.loading', { defaultValue: 'Loading...' })}</p>}
-        {!immunizationsLoading && immunizations.length === 0 && (
-          <p className="mt-3 text-sm text-[var(--text-muted)]">{t('immunization.noDoses', { defaultValue: 'No TT doses recorded yet.' })}</p>
-        )}
-        {!immunizationsLoading && immunizations.length > 0 && (
-          <div className="mt-3 space-y-3">
-            {immunizations.map((v) => (
-              <div className="history-item" key={v.id}>
-                <span>
-                  <strong className="text-[var(--text-primary)]">{v.vaccineName}-{v.doseNumber} — {v.dateAdministered ? v.dateAdministered.slice(0, 10) : ''}</strong>
-                  {v.notes && <small className="block text-[var(--text-secondary)]">{v.notes}</small>}
-                </span>
-                {v.nextDoseDate && <span className="text-xs text-[var(--text-muted)]">{t('immunization.nextDose', { date: v.nextDoseDate.slice(0, 10), defaultValue: `Next: ${v.nextDoseDate.slice(0, 10)}` })}</span>}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
       {patientId && <EmergencyContacts patientId={patientId} />}
     </div>
   )
 }
 
 export default Dashboard
-

@@ -46,6 +46,8 @@ export const getAssessment = (id) => apiRequest(`/assessments/${id}`)
 
 export const getPatientProfile = (userId) => apiRequest(`/patients/${userId}/profile`)
 
+export const getPatientProfileSummary = (userId) => apiRequest(`/patients/${userId}/profile/summary`)
+
 export const updatePatientProfile = (userId, details) => apiRequest(`/patients/${userId}/profile`, {
   method: 'PUT',
   body: JSON.stringify(details),

@@ -190,34 +190,30 @@ async function createAssessment(req, res) {
       return res.status(403).json({ error: 'You can only create assessments for an allowed patient.' })
     }
 
-    if (pregnancyId) {
-      const pregnancy = await prisma.pregnancy.findFirst({
-        where: { id: pregnancyId, patientId },
-        select: { id: true },
-      })
-
-      if (!pregnancy) return res.status(400).json({ error: 'pregnancyId does not belong to patientId.' })
-    }
-
     // Resolve gestational age from the linked (or active) pregnancy.
     // This is needed for preterm/postterm risk escalation in the engine.
-    const activePregnancy = await prisma.pregnancy.findFirst({
-      where: {
-        patientId,
-        ...(pregnancyId ? { id: pregnancyId } : { pregnancyStatus: 'ACTIVE' }),
-      },
-      select: { id: true, lmpDate: true },
-    })
+    const symptomIds = symptoms.map((symptom) => parsePositiveInteger(symptom.symptomId))
+    const [activePregnancy, activeSymptoms] = await Promise.all([
+      prisma.pregnancy.findFirst({
+        where: {
+          patientId,
+          ...(pregnancyId ? { id: pregnancyId } : { pregnancyStatus: 'ACTIVE' }),
+        },
+        select: { id: true, lmpDate: true },
+      }),
+      prisma.symptom.findMany({
+        where: { id: { in: symptomIds }, isActive: true },
+        select: { id: true, code: true, category: true },
+      }),
+    ])
+
+    if (pregnancyId && !activePregnancy) {
+      return res.status(400).json({ error: 'pregnancyId does not belong to patientId.' })
+    }
 
     const gestationalWeeks = activePregnancy
       ? getGestationalWeeks(activePregnancy.lmpDate)
       : null
-
-    const symptomIds = symptoms.map((symptom) => parsePositiveInteger(symptom.symptomId))
-    const activeSymptoms = await prisma.symptom.findMany({
-      where: { id: { in: symptomIds }, isActive: true },
-      select: { id: true, code: true, category: true },
-    })
 
     if (activeSymptoms.length !== symptomIds.length) {
       return res.status(400).json({ error: 'Every submitted symptom must exist and be active.' })
@@ -262,7 +258,7 @@ async function createAssessment(req, res) {
       })
 
       return created
-    })
+    }, { timeout: 15000 })
 
     const ageRiskNote = computeAgeRiskNote(patient.dateOfBirth)
 

@@ -1,6 +1,7 @@
 const express = require('express')
 const {
   getPatientProfile,
+  getPatientProfileSummary,
   savePatientProfile,
   getLhwProfile,
   saveLhwProfile,
@@ -25,6 +26,7 @@ requireAuth, (req, res, next) => {
 }]
 
 router.get('/patients/:userId/profile', womanProfileAccess, getPatientProfile)
+router.get('/patients/:userId/profile/summary', womanProfileAccess, getPatientProfileSummary)
 router.put('/patients/:userId/profile', womanProfileAccess, savePatientProfile)
 router.get('/lhws/:userId/profile', lhwProfileAccess, getLhwProfile)
 router.put('/lhws/:userId/profile', lhwProfileAccess, saveLhwProfile)

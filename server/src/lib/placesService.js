@@ -21,6 +21,7 @@ const FETCH_TIMEOUT_MS = 15_000
 // Value: { data: Array, expiresAt: number }
 const CACHE_TTL_MS = 10 * 60 * 1000 // 10 minutes
 const cache = new Map()
+const inFlight = new Map()
 
 function cacheKey(lat, lng, radiusMeters) {
   return `${lat.toFixed(2)}_${lng.toFixed(2)}_${radiusMeters}`
@@ -143,28 +144,40 @@ async function findNearbyFacilities({ lat, lng, radiusMeters = 5000 }) {
   const cached = getCached(key)
   if (cached) return cached
 
-  const query = buildOverpassQuery({ lat, lng, radiusMeters })
+  const pending = inFlight.get(key)
+  if (pending) return pending
 
-  // 2. Try each Overpass endpoint; first success wins.
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const json = await fetchOverpass(endpoint, query)
-      const elements = Array.isArray(json.elements) ? json.elements : []
+  const request = (async () => {
+    const query = buildOverpassQuery({ lat, lng, radiusMeters })
 
-      const facilities = elements
-        .map(mapElement)
-        .filter(Boolean) // drop nulls from noisy elements
+    // 2. Try each Overpass endpoint; first success wins.
+    for (const endpoint of OVERPASS_ENDPOINTS) {
+      try {
+        const json = await fetchOverpass(endpoint, query)
+        const elements = Array.isArray(json.elements) ? json.elements : []
 
-      setCache(key, facilities)
-      return facilities
-    } catch (err) {
-      console.error(`Overpass endpoint failed (${endpoint}):`, err.message)
-      // fall through to next endpoint
+        const facilities = elements
+          .map(mapElement)
+          .filter(Boolean) // drop nulls from noisy elements
+
+        setCache(key, facilities)
+        return facilities
+      } catch (err) {
+        console.error(`Overpass endpoint failed (${endpoint}):`, err.message)
+        // fall through to next endpoint
+      }
     }
-  }
 
-  // 3. Both endpoints failed — return empty rather than throwing.
-  return []
+    // 3. Both endpoints failed — return empty rather than throwing.
+    return []
+  })()
+
+  inFlight.set(key, request)
+  try {
+    return await request
+  } finally {
+    inFlight.delete(key)
+  }
 }
 
 module.exports = { findNearbyFacilities }

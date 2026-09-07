@@ -70,6 +70,38 @@ const patientProfileSelect = {
   emergencyContacts: true,
 }
 
+const patientProfileSummarySelect = {
+  id: true,
+  userId: true,
+  fullName: true,
+  phone: true,
+  age: true,
+  villageOrArea: true,
+  district: true,
+  province: true,
+  pregnancies: {
+    select: {
+      id: true,
+      pregnancyStatus: true,
+      lmpDate: true,
+      dueDate: true,
+    },
+  },
+}
+
+function serializePatientProfileSummary(profile) {
+  return {
+    id: profile.id,
+    fullName: profile.fullName,
+    phone: profile.phone,
+    age: profile.age,
+    villageOrArea: profile.villageOrArea,
+    district: profile.district,
+    province: profile.province,
+    pregnancies: profile.pregnancies.map(decoratePregnancy),
+  }
+}
+
 const lhwProfileSelect = {
   id: true,
   userId: true,
@@ -140,6 +172,23 @@ async function getPatientProfile(req, res) {
         ? { doseNumber: ttSuggestion.nextDoseNumber, suggestedDate: ttSuggestion.suggestedDate }
         : null,
     })
+  } catch (error) {
+    return handleDatabaseError(error, res)
+  }
+}
+
+async function getPatientProfileSummary(req, res) {
+  const userId = parseId(req.params.userId)
+  if (!userId) return res.status(400).json({ error: 'userId must be a positive integer.' })
+
+  try {
+    const profile = await prisma.patientProfile.findUnique({
+      where: { userId },
+      select: patientProfileSummarySelect,
+    })
+
+    if (!profile) return res.status(404).json({ error: 'Patient profile not found.' })
+    return res.json(serializePatientProfileSummary(profile))
   } catch (error) {
     return handleDatabaseError(error, res)
   }
@@ -379,6 +428,7 @@ async function getLhwStats(req, res) {
 
 module.exports = {
   getPatientProfile,
+  getPatientProfileSummary,
   savePatientProfile,
   getLhwProfile,
   saveLhwProfile,
