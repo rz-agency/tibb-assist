@@ -4,8 +4,6 @@
  * and are designed to feel warm, hand-drawn and whimsical.
  */
 
-import tibbAssistLogo from '../assets/tibb-assist-logo.png.png'
-
 /** Small heart icon — for pregnancy/love contexts */
 export function HeartIcon({ size = 20 }) {
   return (
@@ -154,7 +152,21 @@ export function ChevronRightIcon({ size = 16, color = 'var(--text-muted)' }) {
 
 /** Brand mark — tiny logo glyph for header / auth */
 export function BrandMark({ size = 32 }) {
-  return <img src={tibbAssistLogo} width={Math.round(size * 1672 / 941)} height={size} aria-hidden="true" alt="" />
+  return (
+    <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden="true">
+      <defs>
+        <linearGradient id="brandMarkGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="var(--teal-700)"/>
+          <stop offset="100%" stopColor="var(--teal-900)"/>
+        </linearGradient>
+      </defs>
+      <rect x="2" y="2" width="36" height="36" rx="10" fill="url(#brandMarkGrad)"/>
+      <path d="M13 20C13 15 17 12 20 12C23 12 27 15 27 20C27 24 24 27 20 27"
+        stroke="var(--amber-400)" strokeWidth="2.4" strokeLinecap="round" fill="none"/>
+      <circle cx="20" cy="20" r="2.2" fill="var(--amber-400)"/>
+      <path d="M14 11C15.5 9 18 8 20 8" stroke="var(--teal-200)" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.7"/>
+    </svg>
+  )
 }
 
 /** Large pregnancy hero illustration — a stylised mother-and-belly composition */
