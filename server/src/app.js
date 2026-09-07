@@ -18,6 +18,11 @@ const patientRoutes = require('./routes/patientRoutes')
 const aiAssistantRoutes = require('./routes/aiAssistantRoutes')
 const careMissionRoutes = require('./routes/careMissionRoutes')
 const checkInRoutes = require('./routes/checkInRoutes')
+const ancVisitRoutes = require('./routes/ancVisitRoutes')
+const homeVisitRoutes = require('./routes/homeVisitRoutes')
+const immunizationRoutes = require('./routes/immunizationRoutes')
+const followUpRoutes = require('./routes/followUpRoutes')
+const pushNotificationRoutes = require('./routes/pushNotificationRoutes')
 
 const app = express()
 
@@ -69,5 +74,10 @@ app.use('/api', patientRoutes)
 app.use('/api/ai-assistant', aiAssistantRoutes)
 app.use('/api', careMissionRoutes)
 app.use('/api', checkInRoutes)
+app.use('/api', ancVisitRoutes)
+app.use('/api', homeVisitRoutes)
+app.use('/api', immunizationRoutes)
+app.use('/api', followUpRoutes)
+app.use('/api', pushNotificationRoutes)
 
 module.exports = app
