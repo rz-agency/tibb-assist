@@ -75,7 +75,6 @@ const patientProfileSummarySelect = {
   userId: true,
   fullName: true,
   phone: true,
-  age: true,
   villageOrArea: true,
   district: true,
   province: true,
