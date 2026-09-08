@@ -113,6 +113,7 @@ async function createAssessmentFromExtractedSymptoms({ patient, userId, extracte
   const activePregnancyId = patient.pregnancies.length > 0 ? patient.pregnancies[0].id : null
 
   const assessment = await prisma.$transaction(async (tx) => {
+  // ... existing code ...
     const created = await tx.assessment.create({
       data: {
         patientId: patient.id,
@@ -157,7 +158,7 @@ async function createAssessmentFromExtractedSymptoms({ patient, userId, extracte
     })
 
     return created
-  })
+  }, { timeout: 15000 })
 
   const presentSymptoms = assessment.assessmentSymptoms
     .filter((s) => s.answerStatus === 'PRESENT')

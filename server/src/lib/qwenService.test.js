@@ -126,7 +126,10 @@ function mockLlmResponse(llmContent) {
   }
 }
 
-const CATALOG = [{ code: 'abdominal_pain', name: 'Abdominal pain', category: 'general' }]
+const CATALOG = [
+  { code: 'abdominal_pain', name: 'Abdominal pain', category: 'general' },
+  { code: 'severe_headache', name: 'Severe headache', category: 'warning_sign' },
+]
 
 test('extractSymptoms: urgent message returns urgentIntentDetected true with existing fields unchanged', async () => {
   const llmPayload = {
@@ -142,7 +145,9 @@ test('extractSymptoms: urgent message returns urgentIntentDetected true with exi
   const result = await extractSymptoms('Ambulance bulao, bohat zyada dard ho raha hai', [], CATALOG)
 
   assert.equal(result.urgentIntentDetected, true)
-  assert.equal(result.chatReply, 'Main aap ki takleef samajh rahi hoon.')
+  // chatReply now passes through buildPatientReply's single-symptom
+  // canonical wording rather than the raw model text.
+  assert.equal(result.chatReply, 'Samajh gaya. Aapko bohat tez pait mein dard ho raha hai. Kya koi aur symptom hai?')
   assert.deepEqual(result.extractedSymptoms, llmPayload.extractedSymptoms)
   assert.equal(result.needsClarification, false)
   assert.equal(result.clarificationQuestion, null)
@@ -166,7 +171,7 @@ test('extractSymptoms: ordinary mild symptom message keeps urgentIntentDetected 
   const result = await extractSymptoms('halka dard hai bas', [], CATALOG)
 
   assert.equal(result.urgentIntentDetected, false)
-  assert.equal(result.chatReply, 'Theek hai, main note kar rahi hoon.')
+  assert.equal(result.chatReply, 'Samajh gaya. Aapko halka pait mein dard ho raha hai. Kya koi aur symptom hai?')
   assert.deepEqual(result.extractedSymptoms, extracted)
   assert.equal(result.readyForAssessment, false)
 })
@@ -202,22 +207,49 @@ test('extractSymptoms: urgency flag never blocks the normal flow (readyForAssess
 })
 
 test('extractSymptoms: non-JSON LLM response falls back with urgentIntentDetected false', async () => {
-  mockLlmResponse('Sorry, I cannot answer in JSON right now.')
+  // With the JSON-retry added tonight, a non-JSON first response triggers one
+  // retry call before falling back. Mock fetch to keep returning non-JSON so
+  // the retry also fails and the safe fallback reply is used.
+  global.fetch = async () => ({
+    ok: true,
+    json: async () => ({ choices: [{ message: { content: 'Sorry, I cannot answer in JSON right now.' } }] }),
+  })
 
   const result = await extractSymptoms('dard ho raha hai', [], CATALOG)
 
   assert.equal(result.urgentIntentDetected, false)
-  assert.equal(result.chatReply, 'Sorry, I cannot answer in JSON right now.')
+  assert.equal(result.chatReply, 'Samajh gaya. Kya aap apna symptom dobara batayenge?')
   assert.deepEqual(result.extractedSymptoms, [])
 })
 
 test('extractSymptoms: broken JSON from LLM falls back with urgentIntentDetected false', async () => {
-  mockLlmResponse('{ "chatReply": "broken')
+  global.fetch = async () => ({
+    ok: true,
+    json: async () => ({ choices: [{ message: { content: '{ "chatReply": "broken' } }] }),
+  })
 
   const result = await extractSymptoms('dard ho raha hai', [], CATALOG)
 
   assert.equal(result.urgentIntentDetected, false)
   assert.deepEqual(result.extractedSymptoms, [])
+})
+
+test('extractSymptoms: patient reply is isolated from model reasoning', async () => {
+  const extracted = [{ code: 'severe_headache', answerStatus: 'PRESENT', severity: 'SEVERE', notes: 'bohat taiz sardard' }]
+  mockLlmResponse(JSON.stringify({
+    chatReply: 'The user is repeating or clarifying. I should map the symptom to SEVERE and set urgentIntentDetected.',
+    extractedSymptoms: extracted,
+    needsClarification: false,
+    clarificationQuestion: null,
+    readyForAssessment: false,
+    urgentIntentDetected: true,
+  }))
+
+  const result = await extractSymptoms('mujhay bht taiz sardard horaha hy', [], CATALOG)
+
+  assert.equal(result.chatReply, 'Samajh gaya. Aapko bohat tez sar dard ho raha hai. Kya koi aur symptom hai?')
+  assert.deepEqual(result.extractedSymptoms, extracted)
+  assert.equal(result.urgentIntentDetected, true)
 })
 
 test('extractSymptoms: system prompt instructs the LLM to detect urgency trigger concepts', async () => {

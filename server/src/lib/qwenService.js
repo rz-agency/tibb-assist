@@ -1,6 +1,6 @@
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
 
-const LLM_MODEL = 'nvidia/nemotron-3.5-lightning:free'
+const LLM_MODEL = 'minimax/minimax-m3'
 const STT_MODEL = 'openai/whisper-large-v3'
 
 /**
@@ -114,6 +114,9 @@ function buildExtractionPrompt(symptomCatalog) {
 
 Your ONLY job is to understand what a pregnant woman says (in Urdu, English, or Roman Urdu) and extract structured symptom information.
 
+OUTPUT FORMAT — CRITICAL:
+Respond with ONLY the JSON object below. Do NOT show your thinking, reasoning, analysis, or any step-by-step process. Do NOT use <think> tags or any preamble. Your entire response must be nothing but the JSON object, starting with { and ending with }.
+
 CRITICAL RULES:
 - You MUST NOT diagnose any medical condition.
 - You MUST NOT assign or suggest any risk level (GREEN, YELLOW, RED).
@@ -172,7 +175,13 @@ For each message, respond with a JSON object in this EXACT format:
 }
 
 Rules for the response:
-- "chatReply" is always required. Be warm, supportive, and conversational in Roman Urdu.
+- "chatReply" is always required and must be patient-facing only: 1-2 short conversational sentences in Roman Urdu, never a long paragraph.
+- Use very simple everyday Roman Urdu for ordinary Pakistani users, and prefer the word "symptom" over "lakshan" or "alamat".
+- Never put reasoning, symptom-mapping logic, severity-mapping rules, catalog details, JSON explanation, analysis, or internal instructions in "chatReply".
+- Never explain why a symptom maps to a severity, and do not repeat the user's entire message.
+- Do not say "Main inhein note karti rahi hoon" or similar unnecessary wording, and do not add filler such as "Main samajh sakti hoon..." unless needed.
+- Keep the reply to one short acknowledgement/question. For one symptom, use wording similar to: "Samajh gaya. Aapko bohat tez sar dard ho raha hai. Kya koi aur symptom hai?"
+- When readyForAssessment is true, keep the confirmation short: "Theek hai. Maine aapke symptoms note kar liye hain. Assessment ke liye Confirm dabayein."
 - "extractedSymptoms" should contain ALL symptoms mentioned so far in the conversation with their best-determined status.
 - If the user mentions a symptom but you cannot determine its status (present/absent) or severity, set "needsClarification" to true and ask in "clarificationQuestion".
 - If the user has stated all their symptoms (or explicitly says no more), set "readyForAssessment" to true. Do NOT keep asking for more.
@@ -181,12 +190,48 @@ Rules for the response:
 - If the user's message is not about health/symptoms, gently redirect to the symptom check context in chatReply.`
 }
 
+const patientSymptomLabels = {
+  severe_headache: 'sar dard',
+  heavy_bleeding: 'bleeding',
+  abdominal_pain: 'pait mein dard',
+  nausea_vomiting: 'matli ya ulti',
+  reduced_fetal_movement: 'baby ki harkat kam hona',
+}
+
+function buildPatientReply(candidate, userMessage, extractedSymptoms, symptomCatalog, readyForAssessment) {
+  if (readyForAssessment) {
+    return 'Theek hai. Maine aapke symptoms note kar liye hain. Assessment ke liye Confirm dabayein.'
+  }
+
+  const presentSymptoms = extractedSymptoms.filter((symptom) => symptom.answerStatus === 'PRESENT')
+  if (presentSymptoms.length === 1) {
+    const symptom = presentSymptoms[0]
+    const catalogEntry = symptomCatalog.find((entry) => entry.code === symptom.code)
+    const label = patientSymptomLabels[symptom.code]
+      || cleanSymptomLabel(catalogEntry?.name || symptom.code.replace(/_/g, ' ')).toLowerCase()
+    const severity = normalizeSeverityFromText(userMessage)
+    const strongPainWords = /\b(bht|taiz|tez)\b/i.test(userMessage)
+    const intensity = severity === 'SEVERE' || strongPainWords ? 'bohat tez ' : severity === 'MILD' ? 'halka ' : severity === 'MODERATE' ? 'darmiyani ' : ''
+    return `Samajh gaya. Aapko ${intensity}${label} ho raha hai. Kya koi aur symptom hai?`
+  }
+
+  if (typeof candidate !== 'string') return 'Samajh gaya. Kya koi aur symptom hai?'
+  const reply = candidate
+    .replace(/\b(lakshan|alamat)\b/gi, 'symptom')
+    .trim()
+  const leaksInternalContent = /reasoning|symptom.?mapping|severity.?mapping|extractedSymptoms|chatReply|catalog|json|internal instruction|i should|i will/i.test(reply)
+  if (!reply || leaksInternalContent) return 'Samajh gaya. Kya koi aur symptom hai?'
+
+  return reply.split(/(?<=[.!?])\s+/).slice(0, 3).join(' ')
+}
+
 async function extractSymptoms(userMessage, conversationHistory, symptomCatalog) {
   const systemPrompt = buildExtractionPrompt(symptomCatalog)
 
   const messages = [{ role: 'system', content: systemPrompt }]
+  const recentHistory = conversationHistory.slice(-8)
 
-  for (const msg of conversationHistory) {
+  for (const msg of recentHistory) {
     if (msg.role === 'user') {
       messages.push({ role: 'user', content: msg.content })
     } else if (msg.role === 'assistant') {
@@ -196,24 +241,38 @@ async function extractSymptoms(userMessage, conversationHistory, symptomCatalog)
 
   messages.push({ role: 'user', content: userMessage })
 
-  const response = await callChatCompletion(messages, { temperature: 0.2 })
+let response = await callChatCompletion(messages, { temperature: 0.2, maxTokens: 1500 })
+let cleanedResponse = response.replace(/<think>[\s\S]*?<\/think>/gi, '')
+let jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/)
 
-  const jsonMatch = response.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) {
-    return {
-      chatReply: response,
-      extractedSymptoms: [],
-      needsClarification: false,
-      readyForAssessment: false,
-      urgentIntentDetected: false,
-    }
+if (!jsonMatch) {
+  // Retry once with a stronger, explicit reminder before giving up
+  const retryMessages = [
+    ...messages,
+    { role: 'assistant', content: response },
+    { role: 'user', content: 'Your last reply was not valid JSON. Respond again with ONLY the JSON object in the exact format specified. No other text.' },
+  ]
+  response = await callChatCompletion(retryMessages, { temperature: 0.2, maxTokens: 1500 })
+  cleanedResponse = response.replace(/<think>[\s\S]*?<\/think>/gi, '')
+  jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/)
+}
+
+if (!jsonMatch) {
+  return {
+    chatReply: 'Samajh gaya. Kya aap apna symptom dobara batayenge?',
+    extractedSymptoms: [],
+    needsClarification: false,
+    readyForAssessment: false,
+    urgentIntentDetected: false,
   }
+} 
 
   try {
     const parsed = JSON.parse(jsonMatch[0])
+    const extractedSymptoms = Array.isArray(parsed.extractedSymptoms) ? parsed.extractedSymptoms : []
     return {
-      chatReply: parsed.chatReply || '',
-      extractedSymptoms: Array.isArray(parsed.extractedSymptoms) ? parsed.extractedSymptoms : [],
+      chatReply: buildPatientReply(parsed.chatReply, userMessage, extractedSymptoms, symptomCatalog, !!parsed.readyForAssessment),
+      extractedSymptoms,
       needsClarification: !!parsed.needsClarification,
       clarificationQuestion: parsed.clarificationQuestion || null,
       readyForAssessment: !!parsed.readyForAssessment,
@@ -221,7 +280,7 @@ async function extractSymptoms(userMessage, conversationHistory, symptomCatalog)
     }
   } catch {
     return {
-      chatReply: response,
+      chatReply: 'Samajh gaya. Kya aap apna symptom dobara batayenge?',
       extractedSymptoms: [],
       needsClarification: false,
       readyForAssessment: false,
@@ -272,6 +331,9 @@ function buildExplanationPrompt(riskLevel, symptomSummary, notedSummary) {
 
   return `You are a maternal health assistant explaining an assessment result to a pregnant woman in simple Roman Urdu.
 
+OUTPUT FORMAT — CRITICAL:
+Respond with ONLY the JSON object below. Do NOT show your thinking, reasoning, analysis, or any step-by-step process. Do NOT use <think> tags or any preamble. Your entire response must be nothing but the JSON object, starting with { and ending with }.
+
 The assessment was calculated by a deterministic rule engine (NOT by you). The risk level is final and must not be changed.
 
 CRITICAL RULES:
@@ -287,6 +349,10 @@ CRITICAL RULES:
 - For GREEN: provide gentle reassurance that no current warning signs were detected, but remind her that this is not a medical diagnosis and she should continue routine prenatal care.
 - Keep the explanation brief (2-4 sentences).
 - Be warm and supportive.
+
+Return only this JSON object after any internal processing:
+{"explanation":"brief Roman Urdu explanation"}
+Do not include reasoning or any text before or after the JSON object.
 
 Scored symptoms (used for risk calculation): ${symptomSummary}${notedLine}
 
@@ -304,7 +370,26 @@ async function explainResult(riskLevel, assessment, symptomSummary, notedSummary
     },
   ]
 
-  return callChatCompletion(messages, { temperature: 0.4, maxTokens: 500 })
+  const response = await callChatCompletion(messages, { temperature: 0.4, maxTokens: 1000 })
+  const cleanedResponse = response.replace(/<think>[\s\S]*?<\/think>/gi, '')
+  const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/)
+  const fallback = riskLevel === 'RED'
+    ? 'Yeh warning sign ho sakta hai. Barah-e-karam doctor ya hospital se foran rabta karein.'
+    : riskLevel === 'YELLOW'
+      ? 'Kuch symptoms par mazeed tawajjo zaroori hai. Meherbani karke healthcare professional se mashwara karein.'
+      : 'Filhal koi warning sign nahi mila. Apni routine prenatal care jari rakhein.'
+
+  if (!jsonMatch) return fallback
+
+  try {
+    const parsed = JSON.parse(jsonMatch[0])
+    const explanation = typeof parsed.explanation === 'string' ? parsed.explanation.trim() : ''
+    const leaksInternalContent = /reasoning|symptom.?mapping|severity.?mapping|extractedSymptoms|chatReply|catalog|json|internal instruction|i should|i will/i.test(explanation)
+    if (!explanation || leaksInternalContent) return fallback
+    return explanation.split(/(?<=[.!?])\s+/).slice(0, 4).join(' ')
+  } catch {
+    return fallback
+  }
 }
 
 module.exports = {
